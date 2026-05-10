@@ -10,25 +10,27 @@ const COLOR_OPTIONS = [
   { label: "Pink", value: "bg-pink-500" },
 ];
 
-interface CreateBlockDialogProps {
+interface BlockDialogProps {
   onClose: () => void;
-  onCreate: (name: string, color: string, percent: number) => void;
+  onSave: (name: string, color: string, percent: number) => void;
+  initialData?: { name: string; color: string; percent: number };
+  title?: string;
 }
 
-export function CreateBlockDialog({ onClose, onCreate }: CreateBlockDialogProps) {
-  const [name, setName] = useState("");
-  const [color, setColor] = useState("bg-red-500");
-  const [percent, setPercent] = useState(25);
+export function BlockDialog({ onClose, onSave, initialData, title = "Block" }: BlockDialogProps) {
+  const [name, setName] = useState(initialData?.name ?? "Block");
+  const [color, setColor] = useState(initialData?.color ?? "bg-gray-500");
+  const [percent, setPercent] = useState(initialData?.percent ?? 10);
 
-  function handleCreate() {
+  function handleSave() {
     if (!name.trim()) return;
-    onCreate(name.trim(), color, percent);
+    onSave(name.trim(), color, percent);
   }
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
       <div className="bg-neutral-800 rounded-xl p-6 w-96 shadow-xl">
-        <h3 className="text-white text-xl font-semibold mb-4">Create Block</h3>
+        <h3 className="text-white text-xl font-semibold mb-4">{title}</h3>
 
         <label className="block text-white text-sm mb-1">Name</label>
         <input
@@ -71,10 +73,10 @@ export function CreateBlockDialog({ onClose, onCreate }: CreateBlockDialogProps)
             Cancel
           </button>
           <button
-            onClick={handleCreate}
+            onClick={handleSave}
             className="bg-white text-neutral-900 px-4 py-2 rounded font-semibold hover:bg-neutral-200 cursor-pointer"
           >
-            Create
+            Save
           </button>
         </div>
       </div>

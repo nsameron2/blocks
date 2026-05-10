@@ -50,7 +50,7 @@ export function Schedule({ onStart }: ScheduleProps) {
     return (
       <section className="max-w-4xl mx-auto mt-12 px-6 transition-opacity duration-500">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-white text-xl font-semibold">Countdown</h2>
+          <h2 className="text-white text-4xl font-semibold">Time</h2>
         </div>
         <div className="text-white text-4xl font-mono font-bold tracking-wider">
           {fmt(remaining)}
