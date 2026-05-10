@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const COLOR_OPTIONS = [
+export const COLOR_OPTIONS = [
   { label: "Gray", value: "bg-gray-500" },
   { label: "Red", value: "bg-red-500" },
   { label: "Blue", value: "bg-blue-500" },

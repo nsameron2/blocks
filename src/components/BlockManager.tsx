@@ -180,6 +180,12 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     updateBlock(id, block.name, block.color, percent);
   }
 
+  function updateBlockColor(id: number, color: string) {
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, color } : b))
+    );
+  }
+
   function deleteBlock(id: number) {
     setBlocks((prev) => prev.filter((b) => b.id !== id));
     setBlockBatteries((prev) => {
@@ -216,6 +222,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
             onDelete={deleteBlock}
             onNameChange={renameBlock}
             onPercentChange={updateBlockPercent}
+            onColorChange={updateBlockColor}
             remainingMs={blockBatteries[block.id] ?? 0}
             allocatedMs={
               scheduleStarted ? Math.floor(totalDurationMs * (block.percent / 100)) : 0

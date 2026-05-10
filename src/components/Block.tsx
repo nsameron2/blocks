@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Block as BlockType } from "../types";
+import { COLOR_OPTIONS } from "./BlockDialog";
 
 interface BlockProps {
   block: BlockType;
@@ -9,6 +10,7 @@ interface BlockProps {
   onDelete: (id: number) => void;
   onNameChange: (id: number, name: string) => void;
   onPercentChange: (id: number, percent: number) => void;
+  onColorChange: (id: number, color: string) => void;
   remainingMs: number;
   allocatedMs: number;
 }
@@ -29,16 +31,20 @@ export function Block({
   onDelete,
   onNameChange,
   onPercentChange,
+  onColorChange,
   remainingMs,
   allocatedMs,
 }: BlockProps) {
   const pct = allocatedMs > 0 ? Math.round((remainingMs / allocatedMs) * 100) : 0;
   const [editingPercent, setEditingPercent] = useState(false);
+  const [editingColor, setEditingColor] = useState(false);
+  const isEditingInline = editingPercent || editingColor;
 
   return (
     <div
       onClick={() => {
         if (editingPercent) setEditingPercent(false);
+        if (editingColor) setEditingColor(false);
         onSelect();
       }}
       className={`group relative ${block.color} w-64 h-64 rounded-lg cursor-pointer ${
@@ -55,7 +61,7 @@ export function Block({
             onChange={(e) => onNameChange(block.id, e.target.value)}
             onClick={(e) => e.stopPropagation()}
             className={`bg-transparent border-none focus:outline-none text-white font-bold w-full p-0 transition-opacity ${
-              editingPercent ? 'opacity-30 pointer-events-none' : ''
+              isEditingInline ? 'opacity-30 pointer-events-none' : ''
             } ${
               block.name.length <= 8
                 ? "text-4xl"
@@ -71,6 +77,7 @@ export function Block({
             <span
               onClick={(e) => {
                 e.stopPropagation();
+                setEditingColor(false);
                 setEditingPercent((prev) => !prev);
               }}
               className="text-white text-sm font-bold bg-white/25 rounded-md px-2 py-0.5 cursor-pointer hover:bg-white/40 transition-colors block"
@@ -80,7 +87,7 @@ export function Block({
             {editingPercent && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute top-full right-0 mt-1 bg-neutral-800/95 rounded-xl p-3 shadow-xl z-20 flex flex-col items-center gap-2"
+                className="absolute top-full right-0 mt-2 bg-neutral-800/95 rounded-xl p-3 shadow-xl z-20 flex flex-col items-center gap-2 origin-top animate-[slide-down_0.15s_ease-out]"
               >
                 <span className="text-white text-xs font-bold">{block.percent}%</span>
                 <input
@@ -97,7 +104,49 @@ export function Block({
           </div>
         </div>
 
-        <div className={`flex items-center gap-2 transition-opacity ml-0 mt-0.5 ${editingPercent ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100'}`}>
+        <div className={`flex items-center gap-2 transition-opacity ml-0 mt-0.5 ${editingPercent ? 'opacity-0 pointer-events-none' : editingColor ? '' : 'opacity-0 group-hover:opacity-100'}`}>
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingPercent(false);
+              setEditingColor((prev) => !prev);
+            }}
+            className={`flex items-center justify-center cursor-pointer p-1.5 rounded-full transition-colors ${editingColor ? 'opacity-0 pointer-events-none' : ''}`}
+            aria-label="Change color"
+          >
+            <div className={`w-4 h-4 rounded-full ${block.color} ring-2 ring-white/60 hover:ring-white transition-all`} />
+          </button>
+          {editingColor && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute top-0 left-0 bg-neutral-800/95 rounded-full shadow-xl z-20 flex flex-col items-center gap-2 p-1.5 origin-top animate-[slide-down_0.15s_ease-out]"
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingColor(false);
+                }}
+                className="flex items-center justify-center cursor-pointer"
+                aria-label="Close color picker"
+              >
+                <div className={`w-4 h-4 rounded-full ${block.color} ring-2 ring-white`} />
+              </button>
+              {COLOR_OPTIONS.filter((c) => c.value !== block.color).map((c) => (
+                <button
+                  key={c.value}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onColorChange(block.id, c.value);
+                    setEditingColor(false);
+                  }}
+                  className={`w-4 h-4 rounded-full ${c.value} cursor-pointer transition-transform hover:scale-125`}
+                  title={c.label}
+                />
+              ))}
+            </div>
+          )}
+        </div>
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -148,7 +197,7 @@ export function Block({
       </div>
 
       {allocatedMs > 0 && (
-        <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity ${editingPercent ? 'opacity-30 pointer-events-none' : ''}`}>
+        <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity ${isEditingInline ? 'opacity-30 pointer-events-none' : ''}`}>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-white text-sm font-bold">{pct}%</span>
             <span className="text-white text-sm font-bold ml-auto">{fmt(remainingMs)}</span>
