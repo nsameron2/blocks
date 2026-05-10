@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Block as BlockType } from "../types";
-import { COLOR_OPTIONS } from "./BlockDialog";
+import { COLOR_OPTIONS, darkerBlockColor } from "./BlockDialog";
 
 interface BlockProps {
   block: BlockType;
@@ -95,7 +95,7 @@ export function Block({
                 <div
                   className="relative h-28 w-1 rounded-full"
                   style={{
-                    background: `linear-gradient(to top, rgb(82 82 82) 0%, rgb(82 82 82) ${maxPercent}%, rgb(38 38 38) ${maxPercent}%, rgb(38 38 38) 100%)`,
+                    background: `linear-gradient(to top, ${darkerBlockColor(block.color)} 0%, ${darkerBlockColor(block.color)} ${maxPercent}%, rgb(38 38 38) ${maxPercent}%, rgb(38 38 38) 100%)`,
                   }}
                 >
                   <input

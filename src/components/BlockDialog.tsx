@@ -10,6 +10,22 @@ export const COLOR_OPTIONS = [
   { label: "Pink", value: "bg-pink-500" },
 ];
 
+/* Darker ^ colors for slider track fills */
+const DARKER_SHADES: Record<string, string> = {
+  gray: "rgb(55 65 81)",
+  red: "rgb(185 28 28)",
+  blue: "rgb(29 78 216)",
+  green: "rgb(21 128 61)",
+  yellow: "rgb(161 98 7)",
+  purple: "rgb(126 34 206)",
+  pink: "rgb(190 24 93)",
+};
+
+export function darkerBlockColor(blockColor: string): string {
+  const match = blockColor.match(/^bg-(\w+)-500$/);
+  return match ? DARKER_SHADES[match[1]] ?? "rgb(82 82 82)" : "rgb(82 82 82)";
+}
+
 interface BlockDialogProps {
   onClose: () => void;
   onSave: (name: string, color: string, percent: number) => void;
@@ -62,7 +78,7 @@ export function BlockDialog({ onClose, onSave, initialData, maxPercent = 100, ti
         <div
           className="relative w-full h-2 rounded-full mb-6"
           style={{
-            background: `linear-gradient(to right, rgb(82 82 82) 0%, rgb(82 82 82) ${maxPercent}%, rgb(70 70 70) ${maxPercent}%, rgb(70 70 70) 100%)`,
+            background: `linear-gradient(to right, ${darkerBlockColor(color)} 0%, ${darkerBlockColor(color)} ${maxPercent}%, rgb(70 70 70) ${maxPercent}%, rgb(70 70 70) 100%)`,
           }}
         >
           <input
