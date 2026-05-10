@@ -5,6 +5,7 @@ import { COLOR_OPTIONS } from "./BlockDialog";
 interface BlockProps {
   block: BlockType;
   isActive: boolean;
+  maxPercent: number;
   onSelect: () => void;
   onEdit: () => void;
   onDelete: (id: number) => void;
@@ -26,6 +27,7 @@ function fmt(ms: number) {
 export function Block({
   block,
   isActive,
+  maxPercent,
   onSelect,
   onEdit,
   onDelete,
@@ -90,15 +92,22 @@ export function Block({
                 className="absolute top-full right-0 mt-2 bg-neutral-800/95 rounded-xl p-3 shadow-xl z-20 flex flex-col items-center gap-2 origin-top animate-[slide-down_0.15s_ease-out]"
               >
                 <span className="text-white text-xs font-bold">{block.percent}%</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={block.percent}
-                  onChange={(e) => onPercentChange(block.id, Number(e.target.value))}
-                  className="h-28 w-1 accent-white"
-                  style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
-                />
+                <div
+                  className="relative h-28 w-1 rounded-full"
+                  style={{
+                    background: `linear-gradient(to top, rgb(82 82 82) 0%, rgb(82 82 82) ${maxPercent}%, rgb(38 38 38) ${maxPercent}%, rgb(38 38 38) 100%)`,
+                  }}
+                >
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={block.percent}
+                    onChange={(e) => onPercentChange(block.id, Number(e.target.value))}
+                    className="slider-clamped absolute inset-0 h-28 w-1"
+                    style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
+                  />
+                </div>
               </div>
             )}
           </div>

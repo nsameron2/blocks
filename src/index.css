@@ -11,3 +11,36 @@
     transform: translateY(0) scale(1);
   }
 }
+
+/* Slider with transparent track so a wrapper div's gradient shows through */
+.slider-clamped {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+.slider-clamped::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.slider-clamped::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+}
+.slider-clamped::-moz-range-track {
+  background: transparent;
+}
+.slider-clamped::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: white;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+}

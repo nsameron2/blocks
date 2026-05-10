@@ -14,13 +14,16 @@ interface BlockDialogProps {
   onClose: () => void;
   onSave: (name: string, color: string, percent: number) => void;
   initialData?: { name: string; color: string; percent: number };
+  maxPercent?: number;
   title?: string;
 }
 
-export function BlockDialog({ onClose, onSave, initialData, title = "Block" }: BlockDialogProps) {
+export function BlockDialog({ onClose, onSave, initialData, maxPercent = 100, title = "Block" }: BlockDialogProps) {
   const [name, setName] = useState(initialData?.name ?? "Block");
   const [color, setColor] = useState(initialData?.color ?? "bg-gray-500");
-  const [percent, setPercent] = useState(initialData?.percent ?? 10);
+  const [percent, setPercent] = useState(
+    Math.min(initialData?.percent ?? 10, maxPercent)
+  );
 
   function handleSave() {
     if (!name.trim()) return;
@@ -56,14 +59,21 @@ export function BlockDialog({ onClose, onSave, initialData, title = "Block" }: B
         <label className="block text-white text-sm mb-1">
           Percent of time: {percent}%
         </label>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={percent}
-          onChange={(e) => setPercent(Number(e.target.value))}
-          className="w-full mb-6 accent-white"
-        />
+        <div
+          className="relative w-full h-2 rounded-full mb-6"
+          style={{
+            background: `linear-gradient(to right, rgb(82 82 82) 0%, rgb(82 82 82) ${maxPercent}%, rgb(70 70 70) ${maxPercent}%, rgb(70 70 70) 100%)`,
+          }}
+        >
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={percent}
+            onChange={(e) => setPercent(Math.min(Number(e.target.value), maxPercent))}
+            className="slider-clamped absolute inset-0 w-full h-2"
+          />
+        </div>
 
         <div className="flex justify-end gap-3">
           <button

@@ -44,126 +44,50 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     return () => clearInterval(timer);
   }, [scheduleStarted, activeBlockId]);
 
+  const totalAllocated = blocks.reduce((sum, b) => sum + b.percent, 0);
+  const remainingPercent = Math.max(0, 100 - totalAllocated);
+  const canAdd = remainingPercent >= 25;
+
   function addEmptyBlock() {
+    if (!canAdd) return;
     const id = nextId;
-    const currentTotal = blocks.reduce((sum, b) => sum + b.percent, 0);
 
-    let nextBlocks = [...blocks];
-    let newPercent: number;
-
-    if (currentTotal >= 100) {
-      const currentCount = blocks.length;
-      newPercent = Math.floor(100 / currentCount);
-      const targetExistingTotal = 100 - newPercent;
-
-      nextBlocks = nextBlocks.map((b) => ({
-        ...b,
-        percent: Math.round((b.percent / currentTotal) * targetExistingTotal),
-      }));
-
-      const adjustedExistingTotal = nextBlocks.reduce((sum, b) => sum + b.percent, 0);
-      const diff = targetExistingTotal - adjustedExistingTotal;
-      if (diff !== 0 && nextBlocks.length > 0) {
-        const largestIdx = nextBlocks.reduce(
-          (maxIdx, b, idx) => (b.percent > nextBlocks[maxIdx].percent ? idx : maxIdx),
-          0
-        );
-        nextBlocks[largestIdx] = {
-          ...nextBlocks[largestIdx],
-          percent: nextBlocks[largestIdx].percent + diff,
-        };
-      }
-    } else {
-      newPercent = 100 - currentTotal;
-    }
-
-    nextBlocks.push({
-      id,
-      name: "Block",
-      color: "bg-gray-500",
-      percent: newPercent,
-    });
-
-    setBlocks(nextBlocks);
+    setBlocks((prev) => [
+      ...prev,
+      { id, name: "Block", color: "bg-gray-500", percent: 25 },
+    ]);
     setNextId((n) => n + 1);
 
     if (scheduleStarted && totalDurationMs > 0) {
-      setBlockBatteries((prev) => {
-        const nextBatteries = { ...prev };
-
-        for (const oldBlock of blocks) {
-          const newBlock = nextBlocks.find((b) => b.id === oldBlock.id);
-          if (!newBlock) continue;
-
-          const oldAllocation = Math.floor(totalDurationMs * (oldBlock.percent / 100));
-          const oldRemaining = prev[oldBlock.id] ?? oldAllocation;
-          const spent = Math.max(0, oldAllocation - oldRemaining);
-          const newAllocation = Math.floor(totalDurationMs * (newBlock.percent / 100));
-          nextBatteries[oldBlock.id] = Math.max(0, newAllocation - spent);
-        }
-
-        nextBatteries[id] = Math.floor(totalDurationMs * (newPercent / 100));
-        return nextBatteries;
-      });
+      setBlockBatteries((prev) => ({
+        ...prev,
+        [id]: Math.floor(totalDurationMs * 0.25),
+      }));
     }
   }
 
   function updateBlock(id: number, name: string, color: string, percent: number) {
-    const clampedPercent = Math.max(0, Math.min(100, percent));
     const othersTotal = blocks
       .filter((b) => b.id !== id)
       .reduce((sum, b) => sum + b.percent, 0);
+    const maxAllowed = Math.max(0, 100 - othersTotal);
+    const clampedPercent = Math.max(0, Math.min(maxAllowed, percent));
 
-    let nextBlocks = blocks.map((b) =>
+    const oldBlock = blocks.find((b) => b.id === id);
+    const nextBlocks = blocks.map((b) =>
       b.id === id ? { ...b, name, color, percent: clampedPercent } : b
     );
-
-    if (othersTotal + clampedPercent > 100 && othersTotal > 0) {
-      const targetOthersTotal = 100 - clampedPercent;
-      const scale = targetOthersTotal / othersTotal;
-      nextBlocks = nextBlocks.map((b) =>
-        b.id === id ? b : { ...b, percent: Math.round(b.percent * scale) }
-      );
-
-
-      const adjustedOthersTotal = nextBlocks
-        .filter((b) => b.id !== id)
-        .reduce((sum, b) => sum + b.percent, 0);
-      const diff = targetOthersTotal - adjustedOthersTotal;
-      if (diff !== 0) {
-        let largestIdx = -1;
-        for (let i = 0; i < nextBlocks.length; i++) {
-          if (nextBlocks[i].id === id) continue;
-          if (largestIdx === -1 || nextBlocks[i].percent > nextBlocks[largestIdx].percent) {
-            largestIdx = i;
-          }
-        }
-        if (largestIdx !== -1) {
-          nextBlocks[largestIdx] = {
-            ...nextBlocks[largestIdx],
-            percent: nextBlocks[largestIdx].percent + diff,
-          };
-        }
-      }
-    }
 
     setBlocks(nextBlocks);
     setEditingBlockId(null);
 
-    if (scheduleStarted && totalDurationMs > 0) {
+    if (scheduleStarted && totalDurationMs > 0 && oldBlock) {
       setBlockBatteries((prev) => {
-        const nextBatteries = { ...prev };
-        for (const oldBlock of blocks) {
-          const newBlock = nextBlocks.find((b) => b.id === oldBlock.id);
-          if (!newBlock) continue;
-
-          const oldAllocation = Math.floor(totalDurationMs * (oldBlock.percent / 100));
-          const oldRemaining = prev[oldBlock.id] ?? oldAllocation;
-          const spent = Math.max(0, oldAllocation - oldRemaining);
-          const newAllocation = Math.floor(totalDurationMs * (newBlock.percent / 100));
-          nextBatteries[oldBlock.id] = Math.max(0, newAllocation - spent);
-        }
-        return nextBatteries;
+        const oldAllocation = Math.floor(totalDurationMs * (oldBlock.percent / 100));
+        const oldRemaining = prev[id] ?? oldAllocation;
+        const spent = Math.max(0, oldAllocation - oldRemaining);
+        const newAllocation = Math.floor(totalDurationMs * (clampedPercent / 100));
+        return { ...prev, [id]: Math.max(0, newAllocation - spent) };
       });
     }
   }
@@ -203,32 +127,44 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
   return (
     <section className="max-w-4xl mx-auto mt-16 px-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-white text-xl font-semibold">Blocks</h2>
+        <h2 className="text-white text-xl font-semibold">
+          Blocks
+          <span className="text-neutral-400 text-sm font-normal ml-2">
+            ({remainingPercent}% unallocated)
+          </span>
+        </h2>
         <button
           onClick={addEmptyBlock}
-          className="text-white text-2xl hover:text-neutral-300 cursor-pointer"
+          disabled={!canAdd}
+          title={canAdd ? "Add block" : `Need 25%, only ${remainingPercent}% free`}
+          className="text-white text-2xl hover:text-neutral-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-white"
         >
           +
         </button>
       </div>
       <div className="flex flex-wrap gap-4">
-        {blocks.map((block) => (
-          <Block
-            key={block.id}
-            block={block}
-            isActive={activeBlockId === block.id}
-            onSelect={() => setActiveBlockId(block.id)}
-            onEdit={() => setEditingBlockId(block.id)}
-            onDelete={deleteBlock}
-            onNameChange={renameBlock}
-            onPercentChange={updateBlockPercent}
-            onColorChange={updateBlockColor}
-            remainingMs={blockBatteries[block.id] ?? 0}
-            allocatedMs={
-              scheduleStarted ? Math.floor(totalDurationMs * (block.percent / 100)) : 0
-            }
-          />
-        ))}
+        {blocks.map((block) => {
+          const othersTotal = totalAllocated - block.percent;
+          const maxPercent = Math.max(0, 100 - othersTotal);
+          return (
+            <Block
+              key={block.id}
+              block={block}
+              isActive={activeBlockId === block.id}
+              maxPercent={maxPercent}
+              onSelect={() => setActiveBlockId(block.id)}
+              onEdit={() => setEditingBlockId(block.id)}
+              onDelete={deleteBlock}
+              onNameChange={renameBlock}
+              onPercentChange={updateBlockPercent}
+              onColorChange={updateBlockColor}
+              remainingMs={blockBatteries[block.id] ?? 0}
+              allocatedMs={
+                scheduleStarted ? Math.floor(totalDurationMs * (block.percent / 100)) : 0
+              }
+            />
+          );
+        })}
       </div>
 
       {editingBlock && (
@@ -242,6 +178,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
             color: editingBlock.color,
             percent: editingBlock.percent,
           }}
+          maxPercent={Math.max(0, 100 - (totalAllocated - editingBlock.percent))}
           title="Edit Block"
         />
       )}
