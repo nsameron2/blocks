@@ -46,7 +46,8 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
 
   const totalAllocated = blocks.reduce((sum, b) => sum + b.percent, 0);
   const remainingPercent = Math.max(0, 100 - totalAllocated);
-  const canAdd = remainingPercent >= 25;
+  const canAdd = remainingPercent >= 1;
+  const newBlockPercent = Math.max(1, Math.min(25, remainingPercent));
 
   function addEmptyBlock() {
     if (!canAdd) return;
@@ -54,14 +55,14 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
 
     setBlocks((prev) => [
       ...prev,
-      { id, name: "Block", color: "bg-gray-500", percent: 25 },
+      { id, name: "Block", color: "bg-gray-500", percent: newBlockPercent },
     ]);
     setNextId((n) => n + 1);
 
     if (scheduleStarted && totalDurationMs > 0) {
       setBlockBatteries((prev) => ({
         ...prev,
-        [id]: Math.floor(totalDurationMs * 0.25),
+        [id]: Math.floor(totalDurationMs * (newBlockPercent / 100)),
       }));
     }
   }
@@ -136,7 +137,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
         <button
           onClick={addEmptyBlock}
           disabled={!canAdd}
-          title={canAdd ? "Add block" : `Need 25%, only ${remainingPercent}% free`}
+          title={canAdd ? "Add block" : "Fully allocated"}
           className="text-white text-2xl hover:text-neutral-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-white"
         >
           +
