@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Block as BlockType } from "../types";
 
 interface BlockProps {
@@ -6,6 +7,8 @@ interface BlockProps {
   onSelect: () => void;
   onEdit: () => void;
   onDelete: (id: number) => void;
+  onNameChange: (id: number, name: string) => void;
+  onPercentChange: (id: number, percent: number) => void;
   remainingMs: number;
   allocatedMs: number;
 }
@@ -24,67 +27,89 @@ export function Block({
   onSelect,
   onEdit,
   onDelete,
+  onNameChange,
+  onPercentChange,
   remainingMs,
   allocatedMs,
 }: BlockProps) {
   const pct = allocatedMs > 0 ? Math.round((remainingMs / allocatedMs) * 100) : 0;
+  const [editingPercent, setEditingPercent] = useState(false);
 
   return (
     <div
-      onClick={onSelect}
+      onClick={() => {
+        if (editingPercent) setEditingPercent(false);
+        onSelect();
+      }}
       className={`group relative ${block.color} w-64 h-64 rounded-lg cursor-pointer ${
         isActive
           ? "ring-4 ring-blue-400 shadow-[0_0_20px_rgba(96,165,250,0.6)]"
           : ""
       }`}
     >
-      <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-4 pt-3">
-        <span
-          className={`text-white font-bold break-words leading-tight line-clamp-2 ${
-            block.name.length <= 8
-              ? "text-4xl"
-              : block.name.length <= 14
-                ? "text-2xl"
-                : block.name.length <= 22
-                  ? "text-xl"
-                  : "text-lg"
-          }`}
-        >
-          {block.name}
-        </span>
-        <span className="text-white text-sm font-bold bg-white/25 rounded-md px-2 py-0.5 transition-opacity group-hover:opacity-0 shrink-0 ml-2 mt-0.5">
-          {block.percent}%
-        </span>
-      </div>
+      <div className="absolute top-0 left-0 right-0 flex flex-col px-4 pt-3">
+        <div className="flex items-start justify-between">
+          <input
+            type="text"
+            value={block.name}
+            onChange={(e) => onNameChange(block.id, e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            className={`bg-transparent border-none focus:outline-none text-white font-bold w-full p-0 transition-opacity ${
+              editingPercent ? 'opacity-30 pointer-events-none' : ''
+            } ${
+              block.name.length <= 8
+                ? "text-4xl"
+                : block.name.length <= 14
+                  ? "text-2xl"
+                  : block.name.length <= 22
+                    ? "text-xl"
+                    : "text-lg"
+            }`}
+          />
 
-      {allocatedMs > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-white text-sm font-bold">{pct}%</span>
-            <span className="text-white text-sm font-bold ml-auto">{fmt(remainingMs)}</span>
-          </div>
-          <div className="h-2 bg-black/30 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-white/80 transition-all duration-1000 ease-linear"
-              style={{ width: `${pct}%` }}
-            />
+          <div className="relative shrink-0 ml-2 mt-0.5">
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingPercent((prev) => !prev);
+              }}
+              className="text-white text-sm font-bold bg-white/25 rounded-md px-2 py-0.5 cursor-pointer hover:bg-white/40 transition-colors block"
+            >
+              {block.percent}%
+            </span>
+            {editingPercent && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute top-full right-0 mt-1 bg-neutral-800/95 rounded-xl p-3 shadow-xl z-20 flex flex-col items-center gap-2"
+              >
+                <span className="text-white text-xs font-bold">{block.percent}%</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={block.percent}
+                  onChange={(e) => onPercentChange(block.id, Number(e.target.value))}
+                  className="h-28 w-1 accent-white"
+                  style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
+                />
+              </div>
+            )}
           </div>
         </div>
-      )}
 
-      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className={`flex items-center gap-2 transition-opacity ml-0 mt-0.5 ${editingPercent ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100'}`}>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onEdit();
           }}
-          className="text-white bg-black/50 rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/70 cursor-pointer"
+          className="text-white/70 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
           aria-label="Edit block"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -101,13 +126,13 @@ export function Block({
             e.stopPropagation();
             onDelete(block.id);
           }}
-          className="text-white bg-black/50 rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/70 cursor-pointer"
+          className="text-white/70 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
           aria-label="Delete block"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -120,6 +145,24 @@ export function Block({
           </svg>
         </button>
       </div>
+      </div>
+
+      {allocatedMs > 0 && (
+        <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity ${editingPercent ? 'opacity-30 pointer-events-none' : ''}`}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-white text-sm font-bold">{pct}%</span>
+            <span className="text-white text-sm font-bold ml-auto">{fmt(remainingMs)}</span>
+          </div>
+          <div className="h-2 bg-black/30 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-white/80 transition-all duration-1000 ease-linear"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      
     </div>
   );
 }
