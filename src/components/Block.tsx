@@ -248,7 +248,7 @@ export function Block({
       </div>
 
       <span
-        className="absolute inset-0 flex items-center justify-center text-8xl opacity-10 pointer-events-none select-none"
+        className="absolute inset-0 flex items-center justify-center text-8xl opacity-20 pointer-events-none select-none"
         aria-hidden="true"
       >
         {block.emoji}
