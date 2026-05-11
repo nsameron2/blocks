@@ -28,8 +28,8 @@ export function darkerBlockColor(blockColor: string): string {
 
 interface BlockDialogProps {
   onClose: () => void;
-  onSave: (name: string, color: string, percent: number) => void;
-  initialData?: { name: string; color: string; percent: number };
+  onSave: (name: string, color: string, percent: number, emoji: string) => void;
+  initialData?: { name: string; color: string; percent: number; emoji: string };
   maxPercent?: number;
   title?: string;
 }
@@ -40,10 +40,11 @@ export function BlockDialog({ onClose, onSave, initialData, maxPercent = 100, ti
   const [percent, setPercent] = useState(
     Math.min(initialData?.percent ?? 10, maxPercent)
   );
+  const [emoji, setEmoji] = useState(initialData?.emoji ?? "🆕");
 
   function handleSave() {
     if (!name.trim()) return;
-    onSave(name.trim(), color, percent);
+    onSave(name.trim(), color, percent, emoji);
   }
 
   return (
@@ -58,6 +59,16 @@ export function BlockDialog({ onClose, onSave, initialData, maxPercent = 100, ti
           onChange={(e) => setName(e.target.value)}
           placeholder="Block name"
           className="w-full bg-neutral-700 text-white rounded px-3 py-2 border border-neutral-600 focus:outline-none focus:border-neutral-400 mb-4"
+        />
+
+        <label className="block text-white text-sm mb-1">Emoji</label>
+        <input
+          type="text"
+          value={emoji}
+          onChange={(e) => setEmoji(e.target.value)}
+          placeholder="Emoji"
+          maxLength={2}
+          className="w-16 bg-neutral-700 text-white rounded px-3 py-2 border border-neutral-600 focus:outline-none focus:border-neutral-400 mb-4 text-center text-xl"
         />
 
         <label className="block text-white text-sm mb-1">Color</label>

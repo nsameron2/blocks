@@ -1,4 +1,6 @@
 import { useState } from "react";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import type { Block as BlockType } from "../types";
 import { COLOR_OPTIONS, darkerBlockColor } from "./BlockDialog";
 
@@ -12,6 +14,7 @@ interface BlockProps {
   onNameChange: (id: number, name: string) => void;
   onPercentChange: (id: number, percent: number) => void;
   onColorChange: (id: number, color: string) => void;
+  onEmojiChange: (id: number, emoji: string) => void;
   remainingMs: number;
   allocatedMs: number;
 }
@@ -34,19 +37,22 @@ export function Block({
   onNameChange,
   onPercentChange,
   onColorChange,
+  onEmojiChange,
   remainingMs,
   allocatedMs,
 }: BlockProps) {
   const pct = allocatedMs > 0 ? Math.round((remainingMs / allocatedMs) * 100) : 0;
   const [editingPercent, setEditingPercent] = useState(false);
   const [editingColor, setEditingColor] = useState(false);
-  const isEditingInline = editingPercent || editingColor;
+  const [editingEmoji, setEditingEmoji] = useState(false);
+  const isEditingInline = editingPercent || editingColor || editingEmoji;
 
   return (
     <div
       onClick={() => {
         if (editingPercent) setEditingPercent(false);
         if (editingColor) setEditingColor(false);
+        if (editingEmoji) setEditingEmoji(false);
         onSelect();
       }}
       className={`group relative ${block.color} w-64 h-64 rounded-lg cursor-pointer transition-opacity ${
@@ -55,7 +61,7 @@ export function Block({
         isActive
           ? "ring-4 ring-blue-400 shadow-[0_0_20px_rgba(96,165,250,0.6)]"
           : ""
-      }`}
+      } ` }
     >
       <div className="absolute top-0 left-0 right-0 flex flex-col px-4 pt-3">
         <div className="flex items-start justify-between">
@@ -69,9 +75,9 @@ export function Block({
             } ${
               block.name.length <= 8
                 ? "text-4xl"
-                : block.name.length <= 14
+                : block.name.length <= 12
                   ? "text-2xl"
-                  : block.name.length <= 22
+                  : block.name.length <= 20
                     ? "text-xl"
                     : "text-lg"
             }`}
@@ -82,6 +88,7 @@ export function Block({
               onClick={(e) => {
                 e.stopPropagation();
                 setEditingColor(false);
+                setEditingEmoji(false);
                 setEditingPercent((prev) => !prev);
               }}
               className="text-white text-sm font-bold bg-white/25 rounded-md px-2 py-0.5 cursor-pointer hover:bg-white/40 transition-colors block"
@@ -115,12 +122,45 @@ export function Block({
           </div>
         </div>
 
-        <div className={`flex items-center gap-2 transition-opacity ml-0 mt-0.5 ${editingPercent ? 'opacity-0 pointer-events-none' : editingColor ? '' : 'opacity-0 group-hover:opacity-100'}`}>
+        <div className={`flex items-center gap-2 transition-opacity ml-0 mt-0.5 ${editingPercent ? 'opacity-0 pointer-events-none' : (editingColor || editingEmoji) ? '' : 'opacity-0 group-hover:opacity-100'}`}>
         <div className="relative">
           <button
             onClick={(e) => {
               e.stopPropagation();
               setEditingPercent(false);
+              setEditingColor(false);
+              setEditingEmoji((prev) => !prev);
+            }}
+            className="emoji-outline-trigger flex items-center justify-center cursor-pointer p-1 rounded-full transition-colors"
+            aria-label="Change emoji"
+          >
+            <span className="emoji-outline text-xl leading-none">{block.emoji}</span>
+          </button>
+          {editingEmoji && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute top-full mt-2 z-20 origin-top-left animate-[slide-down_0.15s_ease-out] scale-85"
+            >
+              <Picker
+                data={data}
+                theme="dark"
+                previewPosition="none"
+                skinTonePosition="none"
+                navPosition="none"
+                onEmojiSelect={(e: { native: string }) => {
+                  onEmojiChange(block.id, e.native);
+                  setEditingEmoji(false);
+                }}
+              />
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingPercent(false);
+              setEditingEmoji(false);
               setEditingColor((prev) => !prev);
             }}
             className={`flex items-center justify-center cursor-pointer p-1.5 rounded-full transition-colors ${editingColor ? 'opacity-0 pointer-events-none' : ''}`}
@@ -206,6 +246,13 @@ export function Block({
         </button>
       </div>
       </div>
+
+      <span
+        className="absolute inset-0 flex items-center justify-center text-8xl opacity-10 pointer-events-none select-none"
+        aria-hidden="true"
+      >
+        {block.emoji}
+      </span>
 
       {allocatedMs > 0 && (
         <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity ${isEditingInline ? 'opacity-30 pointer-events-none' : ''}`}>

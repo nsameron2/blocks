@@ -44,3 +44,20 @@
   border-radius: 9999px;
   cursor: pointer;
 }
+
+/* Outline that molds around the emoji glyph using stacked drop-shadows */
+.emoji-outline {
+  filter:
+    drop-shadow(1px 0 0 rgb(255 255 255 / 0.6))
+    drop-shadow(-1px 0 0 rgb(255 255 255 / 0.6))
+    drop-shadow(0 1px 0 rgb(255 255 255 / 0.6))
+    drop-shadow(0 -1px 0 rgb(255 255 255 / 0.6));
+  transition: filter 0.15s ease;
+}
+.emoji-outline-trigger:hover .emoji-outline {
+  filter:
+    drop-shadow(1px 0 0 white)
+    drop-shadow(-1px 0 0 white)
+    drop-shadow(0 1px 0 white)
+    drop-shadow(0 -1px 0 white);
+}

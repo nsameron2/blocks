@@ -3,4 +3,5 @@ export interface Block {
   name: string;
   color: string;
   percent: number;
+  emoji: string;
 }

@@ -10,7 +10,13 @@ interface BlockManagerProps {
 
 export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerProps) {
   const [blocks, setBlocks] = useState<BlockData[]>([
-    { id: 1, name: "Idle", color: "bg-gray-500", percent: 25 },
+    {
+      id: 1,
+      name: "Block",
+      color: "bg-gray-500",
+      percent: 25,
+      emoji: "🆕",
+    },
   ]);
   const [nextId, setNextId] = useState(2);
   const [editingBlockId, setEditingBlockId] = useState<number | null>(null);
@@ -53,7 +59,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
 
     setBlocks((prev) => [
       ...prev,
-      { id, name: "Block", color: "bg-gray-500", percent: newBlockPercent },
+      { id, name: "Block", color: "bg-gray-500", percent: newBlockPercent, emoji: "🆕" },
     ]);
     setNextId((n) => n + 1);
 
@@ -65,7 +71,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     }
   }
 
-  function updateBlock(id: number, name: string, color: string, percent: number) {
+  function updateBlock(id: number, name: string, color: string, percent: number, emoji: string) {
     const othersTotal = blocks
       .filter((b) => b.id !== id)
       .reduce((sum, b) => sum + b.percent, 0);
@@ -74,7 +80,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
 
     const oldBlock = blocks.find((b) => b.id === id);
     const nextBlocks = blocks.map((b) =>
-      b.id === id ? { ...b, name, color, percent: clampedPercent } : b
+      b.id === id ? { ...b, name, color, percent: clampedPercent, emoji } : b
     );
 
     setBlocks(nextBlocks);
@@ -100,12 +106,18 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
   function updateBlockPercent(id: number, percent: number) {
     const block = blocks.find((b) => b.id === id);
     if (!block) return;
-    updateBlock(id, block.name, block.color, percent);
+    updateBlock(id, block.name, block.color, percent, block.emoji);
   }
 
   function updateBlockColor(id: number, color: string) {
     setBlocks((prev) =>
       prev.map((b) => (b.id === id ? { ...b, color } : b))
+    );
+  }
+
+  function updateBlockEmoji(id: number, emoji: string) {
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, emoji } : b))
     );
   }
 
@@ -156,6 +168,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
               onNameChange={renameBlock}
               onPercentChange={updateBlockPercent}
               onColorChange={updateBlockColor}
+              onEmojiChange={updateBlockEmoji}
               remainingMs={blockBatteries[block.id] ?? 0}
               allocatedMs={
                 scheduleStarted ? Math.floor(totalDurationMs * (block.percent / 100)) : 0
@@ -168,13 +181,14 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
       {editingBlock && (
         <BlockDialog
           onClose={() => setEditingBlockId(null)}
-          onSave={(name, color, percent) =>
-            updateBlock(editingBlock.id, name, color, percent)
+          onSave={(name, color, percent, emoji) =>
+            updateBlock(editingBlock.id, name, color, percent, emoji)
           }
           initialData={{
             name: editingBlock.name,
             color: editingBlock.color,
             percent: editingBlock.percent,
+            emoji: editingBlock.emoji,
           }}
           maxPercent={Math.max(0, 100 - (totalAllocated - editingBlock.percent))}
           title="Edit Block"
