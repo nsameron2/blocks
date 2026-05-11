@@ -49,7 +49,9 @@ export function Block({
         if (editingColor) setEditingColor(false);
         onSelect();
       }}
-      className={`group relative ${block.color} w-64 h-64 rounded-lg cursor-pointer ${
+      className={`group relative ${block.color} w-64 h-64 rounded-lg cursor-pointer transition-opacity ${
+        block.percent === 0 ? "opacity-40 hover:opacity-80" : ""
+      } ${
         isActive
           ? "ring-4 ring-blue-400 shadow-[0_0_20px_rgba(96,165,250,0.6)]"
           : ""

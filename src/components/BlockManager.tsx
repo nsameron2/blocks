@@ -46,11 +46,9 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
 
   const totalAllocated = blocks.reduce((sum, b) => sum + b.percent, 0);
   const remainingPercent = Math.max(0, 100 - totalAllocated);
-  const canAdd = remainingPercent >= 1;
-  const newBlockPercent = Math.max(1, Math.min(25, remainingPercent));
+  const newBlockPercent = Math.max(0, Math.min(25, remainingPercent));
 
   function addEmptyBlock() {
-    if (!canAdd) return;
     const id = nextId;
 
     setBlocks((prev) => [
@@ -136,8 +134,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
         </h2>
         <button
           onClick={addEmptyBlock}
-          disabled={!canAdd}
-          title={canAdd ? "Add block" : "Fully allocated"}
+          title={"Add block"}
           className="text-white text-2xl hover:text-neutral-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-white"
         >
           +
