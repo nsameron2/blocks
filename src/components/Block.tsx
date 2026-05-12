@@ -2,14 +2,38 @@ import { useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import type { Block as BlockType } from "../types";
-import { COLOR_OPTIONS, darkerBlockColor } from "./BlockDialog";
+
+const COLOR_OPTIONS = [
+  { label: "Gray", value: "bg-gray-500" },
+  { label: "Red", value: "bg-red-500" },
+  { label: "Blue", value: "bg-blue-500" },
+  { label: "Green", value: "bg-green-500" },
+  { label: "Yellow", value: "bg-yellow-500" },
+  { label: "Purple", value: "bg-purple-500" },
+  { label: "Pink", value: "bg-pink-500" },
+];
+
+/* Darker ^ colors for slider track fills */
+const DARKER_SHADES: Record<string, string> = {
+  gray: "rgb(55 65 81)",
+  red: "rgb(185 28 28)",
+  blue: "rgb(29 78 216)",
+  green: "rgb(21 128 61)",
+  yellow: "rgb(161 98 7)",
+  purple: "rgb(126 34 206)",
+  pink: "rgb(190 24 93)",
+};
+
+function darkerBlockColor(blockColor: string): string {
+  const match = blockColor.match(/^bg-(\w+)-500$/);
+  return match ? DARKER_SHADES[match[1]] ?? "rgb(82 82 82)" : "rgb(82 82 82)";
+}
 
 interface BlockProps {
   block: BlockType;
   isActive: boolean;
   maxPercent: number;
   onSelect: () => void;
-  onEdit: () => void;
   onDelete: (id: number) => void;
   onNameChange: (id: number, name: string) => void;
   onPercentChange: (id: number, percent: number) => void;
@@ -32,7 +56,6 @@ export function Block({
   isActive,
   maxPercent,
   onSelect,
-  onEdit,
   onDelete,
   onNameChange,
   onPercentChange,
@@ -198,29 +221,6 @@ export function Block({
             </div>
           )}
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit();
-          }}
-          className="text-white/70 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-          aria-label="Edit block"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
-        </button>
         <button
           onClick={(e) => {
             e.stopPropagation();

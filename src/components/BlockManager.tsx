@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Block as BlockData } from "../types";
 import { Block } from "./Block";
-import { BlockDialog } from "./BlockDialog";
 
 interface BlockManagerProps {
   totalDurationMs: number;
@@ -19,7 +18,6 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     },
   ]);
   const [nextId, setNextId] = useState(2);
-  const [editingBlockId, setEditingBlockId] = useState<number | null>(null);
   const [activeBlockId, setActiveBlockId] = useState<number | null>(null);
   const [blockBatteries, setBlockBatteries] = useState<Record<number, number>>({});
 
@@ -71,22 +69,27 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     }
   }
 
-  function updateBlock(id: number, name: string, color: string, percent: number, emoji: string) {
+  function renameBlock(id: number, name: string) {
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, name } : b))
+    );
+  }
+
+  function updateBlockPercent(id: number, percent: number) {
+    const oldBlock = blocks.find((b) => b.id === id);
+    if (!oldBlock) return;
+
     const othersTotal = blocks
       .filter((b) => b.id !== id)
       .reduce((sum, b) => sum + b.percent, 0);
     const maxAllowed = Math.max(0, 100 - othersTotal);
     const clampedPercent = Math.max(0, Math.min(maxAllowed, percent));
 
-    const oldBlock = blocks.find((b) => b.id === id);
-    const nextBlocks = blocks.map((b) =>
-      b.id === id ? { ...b, name, color, percent: clampedPercent, emoji } : b
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, percent: clampedPercent } : b))
     );
 
-    setBlocks(nextBlocks);
-    setEditingBlockId(null);
-
-    if (scheduleStarted && totalDurationMs > 0 && oldBlock) {
+    if (scheduleStarted && totalDurationMs > 0) {
       setBlockBatteries((prev) => {
         const oldAllocation = Math.floor(totalDurationMs * (oldBlock.percent / 100));
         const oldRemaining = prev[id] ?? oldAllocation;
@@ -95,18 +98,6 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
         return { ...prev, [id]: Math.max(0, newAllocation - spent) };
       });
     }
-  }
-
-  function renameBlock(id: number, name: string) {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, name } : b))
-    );
-  }
-
-  function updateBlockPercent(id: number, percent: number) {
-    const block = blocks.find((b) => b.id === id);
-    if (!block) return;
-    updateBlock(id, block.name, block.color, percent, block.emoji);
   }
 
   function updateBlockColor(id: number, color: string) {
@@ -133,8 +124,6 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     }
   }
 
-  const editingBlock = blocks.find((b) => b.id === editingBlockId);
-
   return (
     <section className="max-w-4xl mx-auto mt-16 px-6">
       <div className="flex justify-between items-center mb-4">
@@ -160,7 +149,6 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
               isActive={activeBlockId === block.id}
               maxPercent={maxPercent}
               onSelect={() => setActiveBlockId(block.id)}
-              onEdit={() => setEditingBlockId(block.id)}
               onDelete={deleteBlock}
               onNameChange={renameBlock}
               onPercentChange={updateBlockPercent}
@@ -174,23 +162,6 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
           );
         })}
       </div>
-
-      {editingBlock && (
-        <BlockDialog
-          onClose={() => setEditingBlockId(null)}
-          onSave={(name, color, percent, emoji) =>
-            updateBlock(editingBlock.id, name, color, percent, emoji)
-          }
-          initialData={{
-            name: editingBlock.name,
-            color: editingBlock.color,
-            percent: editingBlock.percent,
-            emoji: editingBlock.emoji,
-          }}
-          maxPercent={Math.max(0, 100 - (totalAllocated - editingBlock.percent))}
-          title="Edit Block"
-        />
-      )}
     </section>
   );
 }
