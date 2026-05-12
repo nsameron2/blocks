@@ -140,9 +140,6 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-white text-xl font-semibold">
           Blocks
-          <span className="text-neutral-400 text-sm font-normal ml-2">
-            ({remainingPercent}% unallocated)
-          </span>
         </h2>
         <button
           onClick={addEmptyBlock}
