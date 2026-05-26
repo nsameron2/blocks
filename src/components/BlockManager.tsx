@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Block as BlockData } from "../types";
 import { Block } from "./Block";
 import { Muxer } from "./Muxer";
@@ -20,7 +20,9 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
   ]);
   const [nextId, setNextId] = useState(2);
   const [activeBlockId, setActiveBlockId] = useState<number | null>(null);
-  const [blockBatteries, setBlockBatteries] = useState<Record<number, number>>({});
+  const [blockSpent, setBlockSpent] = useState<Record<number, number>>({});
+  const blocksRef = useRef(blocks);
+  blocksRef.current = blocks;
 
   useEffect(() => {
     if (scheduleStarted && activeBlockId === null && blocks.length > 0) {
@@ -29,25 +31,19 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
   }, [scheduleStarted, blocks, activeBlockId]);
 
   useEffect(() => {
-    if (!scheduleStarted || totalDurationMs <= 0) return;
-    const batteries: Record<number, number> = {};
-    for (const block of blocks) {
-      batteries[block.id] = Math.floor(totalDurationMs * (block.percent / 100));
-    }
-    setBlockBatteries(batteries);
-  }, [scheduleStarted, totalDurationMs]);
-
-  useEffect(() => {
     if (!scheduleStarted || activeBlockId === null) return;
     const timer = setInterval(() => {
-      setBlockBatteries((prev) => {
-        const current = prev[activeBlockId];
-        if (current === undefined || current <= 0) return prev;
-        return { ...prev, [activeBlockId]: Math.max(0, current - 1000) };
+      setBlockSpent((prev) => {
+        const block = blocksRef.current.find((b) => b.id === activeBlockId);
+        if (!block) return prev;
+        const allocation = Math.floor(totalDurationMs * (block.percent / 100));
+        const currentSpent = prev[activeBlockId] ?? 0;
+        if (currentSpent >= allocation) return prev;
+        return { ...prev, [activeBlockId]: currentSpent + 1000 };
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [scheduleStarted, activeBlockId]);
+  }, [scheduleStarted, activeBlockId, totalDurationMs]);
 
   const totalAllocated = blocks.reduce((sum, b) => sum + b.percent, 0);
   const remainingPercent = Math.max(0, 100 - totalAllocated);
@@ -61,13 +57,6 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
       { id, name: "Block", color: "bg-gray-500", percent: newBlockPercent, emoji: "🆕" },
     ]);
     setNextId((n) => n + 1);
-
-    if (scheduleStarted && totalDurationMs > 0) {
-      setBlockBatteries((prev) => ({
-        ...prev,
-        [id]: Math.floor(totalDurationMs * (newBlockPercent / 100)),
-      }));
-    }
   }
 
   function renameBlock(id: number, name: string) {
@@ -77,34 +66,18 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
   }
 
   function updateBlockPercent(id: number, percent: number) {
-    const oldBlock = blocks.find((b) => b.id === id);
-    if (!oldBlock) return;
-
     const othersTotal = blocks
       .filter((b) => b.id !== id)
       .reduce((sum, b) => sum + b.percent, 0);
     const maxAllowed = Math.max(0, 100 - othersTotal);
     const clampedPercent = Math.max(0, Math.min(maxAllowed, percent));
-
     setBlocks((prev) =>
       prev.map((b) => (b.id === id ? { ...b, percent: clampedPercent } : b))
     );
-
-    if (scheduleStarted && totalDurationMs > 0) {
-      setBlockBatteries((prev) => {
-        const oldAllocation = Math.floor(totalDurationMs * (oldBlock.percent / 100));
-        const oldRemaining = prev[id] ?? oldAllocation;
-        const spent = Math.max(0, oldAllocation - oldRemaining);
-        const newAllocation = Math.floor(totalDurationMs * (clampedPercent / 100));
-        return { ...prev, [id]: Math.max(0, newAllocation - spent) };
-      });
-    }
   }
 
   function applyBlockPercents(updates: { id: number; percent: number }[]) {
     if (updates.length === 0) return;
-    const oldBlocks = blocks;
-
     setBlocks((prev) =>
       prev.map((b) => {
         const u = updates.find((x) => x.id === b.id);
@@ -112,23 +85,6 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
         return b;
       })
     );
-
-    if (scheduleStarted && totalDurationMs > 0) {
-      setBlockBatteries((prevBat) => {
-        const next = { ...prevBat };
-        for (const u of updates) {
-          const oldBlock = oldBlocks.find((b) => b.id === u.id);
-          if (!oldBlock) continue;
-          const newPercent = Math.max(0, Math.min(100, u.percent));
-          const oldAllocation = Math.floor(totalDurationMs * (oldBlock.percent / 100));
-          const oldRemaining = next[u.id] ?? oldAllocation;
-          const spent = Math.max(0, oldAllocation - oldRemaining);
-          const newAllocation = Math.floor(totalDurationMs * (newPercent / 100));
-          next[u.id] = Math.max(0, newAllocation - spent);
-        }
-        return next;
-      });
-    }
   }
 
   function updateBlockColor(id: number, color: string) {
@@ -145,7 +101,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
 
   function deleteBlock(id: number) {
     setBlocks((prev) => prev.filter((b) => b.id !== id));
-    setBlockBatteries((prev) => {
+    setBlockSpent((prev) => {
       const next = { ...prev };
       delete next[id];
       return next;
@@ -173,6 +129,11 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
         {blocks.map((block) => {
           const othersTotal = totalAllocated - block.percent;
           const maxPercent = Math.max(0, 100 - othersTotal);
+          const allocatedMs = scheduleStarted
+            ? Math.floor(totalDurationMs * (block.percent / 100))
+            : 0;
+          const spentMs = blockSpent[block.id] ?? 0;
+          const remainingMs = Math.max(0, allocatedMs - spentMs);
           return (
             <Block
               key={block.id}
@@ -185,10 +146,8 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
               onPercentChange={updateBlockPercent}
               onColorChange={updateBlockColor}
               onEmojiChange={updateBlockEmoji}
-              remainingMs={blockBatteries[block.id] ?? 0}
-              allocatedMs={
-                scheduleStarted ? Math.floor(totalDurationMs * (block.percent / 100)) : 0
-              }
+              remainingMs={remainingMs}
+              allocatedMs={allocatedMs}
             />
           );
         })}
