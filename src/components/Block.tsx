@@ -96,13 +96,13 @@ export function Block({
             className={`bg-transparent border-none focus:outline-none text-white font-bold w-full p-0 transition-opacity ${
               isEditingInline ? 'opacity-30 pointer-events-none' : ''
             } ${
-              block.name.length <= 8
+              block.name.length <= 7
                 ? "text-4xl"
                 : block.name.length <= 12
                   ? "text-2xl"
                   : block.name.length <= 20
-                    ? "text-xl"
-                    : "text-lg"
+                    ? "text-lg"
+                    : "text-md"
             }`}
           />
 
