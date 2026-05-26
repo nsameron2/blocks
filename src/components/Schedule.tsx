@@ -18,10 +18,6 @@ interface ScheduleProps {
 }
 
 export function Schedule({ onStart }: ScheduleProps) {
-  const [logOnTime, setLogOnTime] = useState(() => {
-    const now = new Date();
-    return now.toTimeString().slice(0, 5);
-  });
   const [logOffTime, setLogOffTime] = useState("");
   const [started, setStarted] = useState(false);
   const [remaining, setRemaining] = useState(0);
@@ -46,46 +42,38 @@ export function Schedule({ onStart }: ScheduleProps) {
     return () => clearInterval(timer);
   }, [started]);
 
-  if (started) {
-    return (
-      <section className="max-w-4xl mx-auto mt-12 px-6 transition-opacity duration-500">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-white text-4xl font-semibold">Time</h2>
-        </div>
-        <div className="text-white text-4xl font-mono font-bold tracking-wider">
-          {fmt(remaining)}
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="max-w-4xl mx-auto mt-12 px-6 transition-opacity duration-500">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-white text-xl font-semibold">Schedule</h2>
+    <section className="max-w-lg mx-auto mt-8 px-6">
+      <h2
+        className={`text-white text-xl font-semibold mb-4 transition-opacity duration-500 ${
+          started ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        Please input your log off time.
+      </h2>
+      <div className="h-24">
+        {started ? (
+          <div className="flex items-center justify-center w-full h-full text-white text-6xl rounded-md bg-neutral-800 px-6 font-mono font-bold tracking-wider">
+            {fmt(remaining)}
+          </div>
+        ) : (
+          <input
+            type="time"
+            value={logOffTime}
+            onChange={(e) => setLogOffTime(e.target.value)}
+            className="block w-full h-full bg-neutral-800 text-white text-6xl font-mono font-bold tracking-wider rounded-md px-6 text-center focus:outline-none focus:ring-2 focus:ring-neutral-500"
+          />
+        )}
       </div>
-      <div className="flex items-center gap-3 flex-wrap">
-        <label className="text-white text-sm">Log on</label>
-        <input
-          type="time"
-          value={logOnTime}
-          onChange={(e) => setLogOnTime(e.target.value)}
-          className="bg-neutral-800 text-white rounded px-3 py-2 border border-neutral-700 focus:outline-none focus:border-neutral-500"
-        />
-        <label className="text-white text-sm ml-2">Log off</label>
-        <input
-          type="time"
-          value={logOffTime}
-          onChange={(e) => setLogOffTime(e.target.value)}
-          className="bg-neutral-800 text-white rounded px-3 py-2 border border-neutral-700 focus:outline-none focus:border-neutral-500"
-        />
-        <button
-          onClick={handleSetSchedule}
-          className="bg-neutral-700 text-white px-4 py-2 rounded hover:bg-neutral-600 cursor-pointer"
-        >
-          Set
-        </button>
-      </div>
+      <button
+        onClick={handleSetSchedule}
+        disabled={!logOffTime || started}
+        className={`mt-4 bg-neutral-700 text-white px-6 py-2 rounded hover:bg-neutral-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-opacity duration-500 ${
+          started ? "opacity-0 pointer-events-none" : ""
+        }`}
+      >
+        Start
+      </button>
     </section>
   );
 }
