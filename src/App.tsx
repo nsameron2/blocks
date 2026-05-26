@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Schedule } from "./components/Schedule";
 import { BlockManager } from "./components/BlockManager";
-import { Muxer } from "./components/Muxer";
 
 function App() {
   const [totalDurationMs, setTotalDurationMs] = useState(0);
@@ -13,12 +12,11 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-900">
+    <main className="min-h-screen bg-neutral-900 pb-32">
       <h1 className="text-white text-center pt-12 text-7xl font-bold">Blocks</h1>
 
       <Schedule onStart={handleScheduleStart} />
       <BlockManager totalDurationMs={totalDurationMs} scheduleStarted={scheduleStarted} />
-      <Muxer />
     </main>
   );
 }

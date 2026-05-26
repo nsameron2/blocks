@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Block as BlockData } from "../types";
 import { Block } from "./Block";
+import { Muxer } from "./Muxer";
 
 interface BlockManagerProps {
   totalDurationMs: number;
@@ -100,6 +101,36 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     }
   }
 
+  function applyBlockPercents(updates: { id: number; percent: number }[]) {
+    if (updates.length === 0) return;
+    const oldBlocks = blocks;
+
+    setBlocks((prev) =>
+      prev.map((b) => {
+        const u = updates.find((x) => x.id === b.id);
+        if (u) return { ...b, percent: Math.max(0, Math.min(100, u.percent)) };
+        return b;
+      })
+    );
+
+    if (scheduleStarted && totalDurationMs > 0) {
+      setBlockBatteries((prevBat) => {
+        const next = { ...prevBat };
+        for (const u of updates) {
+          const oldBlock = oldBlocks.find((b) => b.id === u.id);
+          if (!oldBlock) continue;
+          const newPercent = Math.max(0, Math.min(100, u.percent));
+          const oldAllocation = Math.floor(totalDurationMs * (oldBlock.percent / 100));
+          const oldRemaining = next[u.id] ?? oldAllocation;
+          const spent = Math.max(0, oldAllocation - oldRemaining);
+          const newAllocation = Math.floor(totalDurationMs * (newPercent / 100));
+          next[u.id] = Math.max(0, newAllocation - spent);
+        }
+        return next;
+      });
+    }
+  }
+
   function updateBlockColor(id: number, color: string) {
     setBlocks((prev) =>
       prev.map((b) => (b.id === id ? { ...b, color } : b))
@@ -162,6 +193,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
           );
         })}
       </div>
+      <Muxer blocks={blocks} onApplyPercents={applyBlockPercents} />
     </section>
   );
 }
