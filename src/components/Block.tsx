@@ -1,6 +1,7 @@
 import { useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
+import { X } from "lucide-react";
 import type { Block as BlockType } from "../types";
 
 const COLOR_OPTIONS = [
@@ -229,20 +230,7 @@ export function Block({
           className="text-white/70 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
           aria-label="Delete block"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
-          </svg>
+          <X size={20} strokeWidth={2.5} />
         </button>
       </div>
       </div>

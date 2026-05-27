@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import type { Block as BlockData } from "../types";
 import { Block } from "./Block";
 import { Muxer } from "./Muxer";
@@ -111,19 +112,43 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     }
   }
 
+  function resetBlocks() {
+    setBlocks([
+      {
+        id: 1,
+        name: "Block",
+        color: "bg-gray-500",
+        percent: 25,
+        emoji: "🆕",
+      },
+    ]);
+    setNextId(2);
+    setBlockSpent({});
+    setActiveBlockId(null);
+  }
+
   return (
     <section className="max-w-4xl mx-auto mt-16 px-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-white text-xl font-semibold">
           Blocks
         </h2>
-        <button
-          onClick={addEmptyBlock}
-          title={"Add block"}
-          className="text-white text-2xl hover:text-neutral-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-white"
-        >
-          +
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={resetBlocks}
+            title="Reset blocks"
+            className="text-white hover:text-neutral-300 cursor-pointer"
+          >
+            <RefreshCw size={20} />
+          </button>
+          <button
+            onClick={addEmptyBlock}
+            title={"Add block"}
+            className="text-white text-2xl hover:text-neutral-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-white"
+          >
+            +
+          </button>
+        </div>
       </div>
       <div className="flex flex-wrap gap-4">
         {blocks.map((block) => {
