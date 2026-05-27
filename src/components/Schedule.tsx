@@ -45,11 +45,11 @@ export function Schedule({ onStart }: ScheduleProps) {
   return (
     <section className="max-w-lg mx-auto mt-8 px-6">
       <h2
-        className={`text-white text-xl font-semibold mb-4 transition-opacity duration-500 ${
+        className={`text-white text-xl mb-4 transition-opacity duration-500 ${
           started ? "opacity-0" : "opacity-100"
         }`}
       >
-        Please input your log off time.
+        Please input your log off time
       </h2>
       <div className="h-24">
         {started ? (
