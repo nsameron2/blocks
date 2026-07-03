@@ -13,10 +13,10 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
   const [blocks, setBlocks] = useState<BlockData[]>([
     {
       id: 1,
-      name: "Block",
+      name: "Idle",
       color: "bg-gray-500",
       percent: 25,
-      emoji: "🆕",
+      emoji: "⏲️",
     },
   ]);
   const [nextId, setNextId] = useState(2);
@@ -55,7 +55,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
 
     setBlocks((prev) => [
       ...prev,
-      { id, name: "Block", color: "bg-gray-500", percent: newBlockPercent, emoji: "🆕" },
+      { id, name: "Idle", color: "bg-gray-500", percent: newBlockPercent, emoji: "⏲️" },
     ]);
     setNextId((n) => n + 1);
   }
@@ -116,10 +116,10 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     setBlocks([
       {
         id: 1,
-        name: "Block",
+        name: "Idle",
         color: "bg-gray-500",
         percent: 25,
-        emoji: "🆕",
+        emoji: "⏲️",
       },
     ]);
     setNextId(2);
