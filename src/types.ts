@@ -4,4 +4,5 @@ export interface Block {
   color: string;
   percent: number;
   emoji: string;
+  good: boolean | null;
 }

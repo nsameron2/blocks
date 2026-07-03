@@ -1,7 +1,7 @@
 import { useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
-import { X } from "lucide-react";
+import { ThumbsDown, ThumbsUp, X } from "lucide-react";
 import type { Block as BlockType } from "../types";
 
 const COLOR_OPTIONS = [
@@ -40,6 +40,7 @@ interface BlockProps {
   onPercentChange: (id: number, percent: number) => void;
   onColorChange: (id: number, color: string) => void;
   onEmojiChange: (id: number, emoji: string) => void;
+  onGoodChange: (id: number, good: boolean | null) => void;
   remainingMs: number;
   allocatedMs: number;
 }
@@ -64,6 +65,7 @@ export function Block({
   onPercentChange,
   onColorChange,
   onEmojiChange,
+  onGoodChange,
   remainingMs,
   allocatedMs,
 }: BlockProps) {
@@ -226,6 +228,40 @@ export function Block({
               ))}
             </div>
           )}
+        </div>
+        <div className="flex overflow-hidden rounded-md bg-white/20 ring-1 ring-white/35">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onGoodChange(block.id, true);
+            }}
+            className={`flex h-6 w-7 items-center justify-center transition-colors ${
+              block.good === true
+                ? "bg-green-500 text-white"
+                : "text-white/75 hover:bg-green-500 hover:text-white"
+            }`}
+            aria-label="Mark block as good"
+            aria-pressed={block.good === true}
+            title="Good"
+          >
+            <ThumbsUp size={14} strokeWidth={2.5} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onGoodChange(block.id, false);
+            }}
+            className={`flex h-6 w-7 items-center justify-center border-l border-white/25 transition-colors ${
+              block.good === false
+                ? "bg-red-500 text-white"
+                : "text-white/75 hover:bg-red-500 hover:text-white"
+            }`}
+            aria-label="Mark block as bad"
+            aria-pressed={block.good === false}
+            title="Bad"
+          >
+            <ThumbsDown size={14} strokeWidth={2.5} />
+          </button>
         </div>
         <button
           onClick={(e) => {

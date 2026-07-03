@@ -17,6 +17,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
       color: "bg-gray-500",
       percent: 25,
       emoji: "⏲️",
+      good: false,
     },
   ]);
   const [nextId, setNextId] = useState(2);
@@ -53,7 +54,14 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
 
     setBlocks((prev) => [
       ...prev,
-      { id, name: "Idle", color: "bg-gray-500", percent: newBlockPercent, emoji: "⏲️" },
+      {
+        id,
+        name: "Idle",
+        color: "bg-gray-500",
+        percent: newBlockPercent,
+        emoji: "⏲️",
+        good: null,
+      },
     ]);
     setNextId((n) => n + 1);
   }
@@ -98,6 +106,12 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
     );
   }
 
+  function updateBlockGood(id: number, good: boolean | null) {
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, good } : b))
+    );
+  }
+
   function deleteBlock(id: number) {
     setBlocks((prev) => prev.filter((b) => b.id !== id));
     setBlockSpent((prev) => {
@@ -118,6 +132,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
         color: "bg-gray-500",
         percent: 25,
         emoji: "⏲️",
+        good: false,
       },
     ]);
     setNextId(2);
@@ -169,6 +184,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
               onPercentChange={updateBlockPercent}
               onColorChange={updateBlockColor}
               onEmojiChange={updateBlockEmoji}
+              onGoodChange={updateBlockGood}
               remainingMs={remainingMs}
               allocatedMs={allocatedMs}
             />
