@@ -175,10 +175,10 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
       ...prev,
       {
         id,
-        name: "Idle",
+        name: "Block",
         color: "bg-gray-500",
         percent: newBlockPercent,
-        emoji: "⏲️",
+        emoji: "🆕",
         good: null,
       },
     ]);
