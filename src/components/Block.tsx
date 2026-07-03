@@ -45,11 +45,13 @@ interface BlockProps {
 }
 
 function fmt(ms: number) {
-  if (ms <= 0) return "00:00:00";
-  const s = Math.floor(ms / 1000) % 60;
-  const m = Math.floor(ms / (60 * 1000)) % 60;
-  const h = Math.floor(ms / (60 * 60 * 1000));
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const sign = ms < 0 ? "-" : "";
+  const totalSeconds =
+    ms < 0 ? Math.ceil(Math.abs(ms) / 1000) : Math.floor(ms / 1000);
+  const s = totalSeconds % 60;
+  const m = Math.floor(totalSeconds / 60) % 60;
+  const h = Math.floor(totalSeconds / (60 * 60));
+  return `${sign}${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 export function Block({
@@ -66,6 +68,7 @@ export function Block({
   allocatedMs,
 }: BlockProps) {
   const pct = allocatedMs > 0 ? Math.round((remainingMs / allocatedMs) * 100) : 0;
+  const fillPct = Math.max(0, Math.min(100, pct));
   const [editingPercent, setEditingPercent] = useState(false);
   const [editingColor, setEditingColor] = useState(false);
   const [editingEmoji, setEditingEmoji] = useState(false);
@@ -81,12 +84,14 @@ export function Block({
       }}
       className={`group relative ${block.color} w-64 h-64 rounded-lg cursor-pointer transition-opacity ${
         block.percent === 0 ? "opacity-40 hover:opacity-80" : ""
-      } ${
-        isActive
-          ? "ring-4 ring-blue-400"
-          : ""
       } ` }
     >
+      {isActive && (
+        <div
+          className="pointer-events-none absolute inset-0 rounded-lg ring-4 ring-blue-400"
+          aria-hidden="true"
+        />
+      )}
       <div className="absolute top-0 left-0 right-0 flex flex-col px-4 pt-3">
         <div className="flex items-start justify-between">
           <input
@@ -242,16 +247,16 @@ export function Block({
         {block.emoji}
       </span>
 
-      {allocatedMs > 0 && (
+      {(allocatedMs > 0 || remainingMs < 0) && (
         <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity ${isEditingInline ? 'opacity-30 pointer-events-none' : ''}`}>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-white text-sm font-bold">{pct}%</span>
+            <span className="text-white text-sm font-bold">{fillPct}%</span>
             <span className="text-white text-sm font-bold ml-auto">{fmt(remainingMs)}</span>
           </div>
           <div className="h-2 bg-black/30 rounded-full overflow-hidden">
             <div
               className="h-full bg-white/80 transition-all duration-1000 ease-linear"
-              style={{ width: `${pct}%` }}
+              style={{ width: `${fillPct}%` }}
             />
           </div>
         </div>

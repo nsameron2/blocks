@@ -37,9 +37,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
       setBlockSpent((prev) => {
         const block = blocksRef.current.find((b) => b.id === activeBlockId);
         if (!block) return prev;
-        const allocation = Math.floor(totalDurationMs * (block.percent / 100));
         const currentSpent = prev[activeBlockId] ?? 0;
-        if (currentSpent >= allocation) return prev;
         return { ...prev, [activeBlockId]: currentSpent + 1000 };
       });
     }, 1000);
@@ -158,7 +156,7 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
             ? Math.floor(totalDurationMs * (block.percent / 100))
             : 0;
           const spentMs = blockSpent[block.id] ?? 0;
-          const remainingMs = Math.max(0, allocatedMs - spentMs);
+          const remainingMs = allocatedMs - spentMs;
           return (
             <Block
               key={block.id}
