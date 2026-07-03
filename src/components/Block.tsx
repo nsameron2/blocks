@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { ThumbsDown, ThumbsUp, X } from "lucide-react";
-import type { Block as BlockType } from "../types";
+import type { Block as BlockType, CompletionTone } from "../types";
 
 const COLOR_OPTIONS = [
   { label: "Gray", value: "bg-gray-500" },
@@ -25,6 +25,13 @@ const DARKER_SHADES: Record<string, string> = {
   pink: "rgb(190 24 93)",
 };
 
+const ACTIVE_RING_COLORS: Record<CompletionTone | "active", string> = {
+  active: "rgb(96 165 250)",
+  good: "rgb(74 222 128)",
+  bad: "rgb(248 113 113)",
+  neutral: "rgb(156 163 175)",
+};
+
 function darkerBlockColor(blockColor: string): string {
   const match = blockColor.match(/^bg-(\w+)-500$/);
   return match ? DARKER_SHADES[match[1]] ?? "rgb(82 82 82)" : "rgb(82 82 82)";
@@ -41,6 +48,8 @@ interface BlockProps {
   onColorChange: (id: number, color: string) => void;
   onEmojiChange: (id: number, emoji: string) => void;
   onGoodChange: (id: number, good: boolean | null) => void;
+  onElementChange: (id: number, element: HTMLDivElement | null) => void;
+  completionTone: CompletionTone | null;
   remainingMs: number;
   allocatedMs: number;
 }
@@ -66,18 +75,29 @@ export function Block({
   onColorChange,
   onEmojiChange,
   onGoodChange,
+  onElementChange,
+  completionTone,
   remainingMs,
   allocatedMs,
 }: BlockProps) {
   const pct = allocatedMs > 0 ? Math.round((remainingMs / allocatedMs) * 100) : 0;
   const fillPct = Math.max(0, Math.min(100, pct));
+  const activeRingColor =
+    ACTIVE_RING_COLORS[completionTone ?? "active"];
   const [editingPercent, setEditingPercent] = useState(false);
   const [editingColor, setEditingColor] = useState(false);
   const [editingEmoji, setEditingEmoji] = useState(false);
   const isEditingInline = editingPercent || editingColor || editingEmoji;
+  const setRootElement = useCallback(
+    (element: HTMLDivElement | null) => {
+      onElementChange(block.id, element);
+    },
+    [block.id, onElementChange],
+  );
 
   return (
     <div
+      ref={setRootElement}
       onClick={() => {
         if (editingPercent) setEditingPercent(false);
         if (editingColor) setEditingColor(false);
@@ -90,7 +110,8 @@ export function Block({
     >
       {isActive && (
         <div
-          className="pointer-events-none absolute inset-0 rounded-lg ring-4 ring-blue-400"
+          className="pointer-events-none absolute inset-0 rounded-lg transition-shadow duration-[1800ms] ease-out"
+          style={{ boxShadow: `0 0 0 4px ${activeRingColor}` }}
           aria-hidden="true"
         />
       )}
