@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+html,
+body,
+#root {
+  min-height: 100%;
+  background: rgb(23 23 23);
+}
+
 /* Animation for dropdown menus */
 @keyframes slide-down {
   from {
