@@ -1,79 +1,316 @@
 import { useEffect, useState } from "react";
+import {
+  addDays,
+  addHours,
+  addMinutes,
+  differenceInCalendarDays,
+  differenceInMilliseconds,
+  format,
+  formatDuration,
+  getHours,
+  getMinutes,
+  intervalToDuration,
+  roundToNearestMinutes,
+  set as setDateParts,
+  startOfMinute,
+} from "date-fns";
+import { ChevronDown, ChevronUp, Minus, Play, Plus } from "lucide-react";
 
-function toMs(hhmm: string) {
-  const [h, m] = hhmm.split(":").map(Number);
-  return (h * 60 + m) * 60 * 1000;
+const MINUTE_STEP = 5;
+const DEFAULT_OFFSET_MINUTES = 90;
+const QUICK_OFFSETS = [
+  { label: "30m", minutes: 30 },
+  { label: "1h", minutes: 60 },
+  { label: "90m", minutes: 90 },
+  { label: "2h", minutes: 120 },
+];
+const TIME_BUTTON_CLASS =
+  "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-neutral-300 focus:outline-none";
+const QUICK_BUTTON_CLASS =
+  "flex cursor-pointer items-center justify-center focus:outline-none disabled:cursor-not-allowed disabled:opacity-30";
+
+type ClockPart = "hour" | "minute";
+
+function clockState(clockTime: Date, from = new Date()) {
+  const today = setDateParts(startOfMinute(from), {
+    hours: getHours(clockTime),
+    minutes: getMinutes(clockTime),
+    seconds: 0,
+    milliseconds: 0,
+  });
+  const at = today > from ? today : addDays(today, 1);
+
+  return { at, hour: format(at, "hh"), minute: format(at, "mm") };
 }
 
-function fmt(ms: number) {
-  if (ms <= 0) return "00:00:00";
-  const s = Math.floor(ms / 1000) % 60;
-  const m = Math.floor(ms / (60 * 1000)) % 60;
-  const h = Math.floor(ms / (60 * 60 * 1000));
+function defaultClock(from = new Date()) {
+  return clockState(
+    roundToNearestMinutes(addMinutes(from, DEFAULT_OFFSET_MINUTES), {
+      nearestTo: MINUTE_STEP,
+      roundingMethod: "ceil",
+    }),
+    from,
+  );
+}
+
+function countdown(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor(total / 60) % 60;
+  const s = total % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-interface ScheduleProps {
-  onStart: (durationMs: number) => void;
+function targetLabel(targetAt: Date, now: Date) {
+  const day = differenceInCalendarDays(targetAt, now);
+  const dayLabel = day === 0 ? "Today" : day === 1 ? "Tomorrow" : format(targetAt, "MMM d");
+  const distance = formatDuration(intervalToDuration({ start: now, end: targetAt }), {
+    format: ["hours", "minutes"],
+  });
+
+  return `${dayLabel} | ${distance || "less than a minute"}`;
 }
 
-export function Schedule({ onStart }: ScheduleProps) {
-  const [logOffTime, setLogOffTime] = useState("");
+function TimeField({
+  label,
+  value,
+  step,
+  onChange,
+  onShift,
+}: {
+  label: string;
+  value: string;
+  step: number;
+  onChange: (value: string) => void;
+  onShift: (minutes: number) => void;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col items-center rounded-md bg-black/20 px-2 py-2 ring-1 ring-white/10">
+      <button
+        type="button"
+        onClick={() => onShift(step)}
+        className={TIME_BUTTON_CLASS}
+        aria-label={`Increase ${label}`}
+      >
+        <ChevronUp className="h-5 w-5" />
+      </button>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        maxLength={2}
+        value={value}
+        onFocus={(e) => e.currentTarget.select()}
+        onClick={(e) => e.currentTarget.select()}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(-2))}
+        aria-label={`Edit ${label}`}
+        className="h-16 w-full min-w-0 cursor-text bg-transparent px-0 text-center font-mono text-4xl font-bold leading-none tabular-nums text-white outline-none sm:text-6xl"
+      />
+      <button
+        type="button"
+        onClick={() => onShift(-step)}
+        className={TIME_BUTTON_CLASS}
+        aria-label={`Decrease ${label}`}
+      >
+        <ChevronDown className="h-5 w-5" />
+      </button>
+      <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function QuickOffset({
+  label,
+  minutes,
+  canShift,
+  onShift,
+}: {
+  label: string;
+  minutes: number;
+  canShift: (minutes: number) => boolean;
+  onShift: (minutes: number) => void;
+}) {
+  return (
+    <div className="grid h-10 grid-cols-[32px_1fr_32px] overflow-hidden rounded-md bg-white/5 text-sm font-semibold text-neutral-200">
+      <button
+        type="button"
+        onClick={() => onShift(-minutes)}
+        disabled={!canShift(-minutes)}
+        className={QUICK_BUTTON_CLASS}
+        aria-label={`Subtract ${label}`}
+      >
+        <Minus className="h-4 w-4" />
+      </button>
+      <span className="flex items-center justify-center tabular-nums">{label}</span>
+      <button
+        type="button"
+        onClick={() => onShift(minutes)}
+        disabled={!canShift(minutes)}
+        className={QUICK_BUTTON_CLASS}
+        aria-label={`Add ${label}`}
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+export function Schedule({ onStart }: { onStart: (durationMs: number) => void }) {
+  const [clock, setClock] = useState(() => defaultClock());
   const [started, setStarted] = useState(false);
   const [remaining, setRemaining] = useState(0);
+  const [now, setNow] = useState(() => new Date());
 
-  function handleSetSchedule() {
-    if (!logOffTime) return;
-    const now = new Date();
-    const todayMs = (now.getHours() * 60 + now.getMinutes()) * 60 * 1000 + now.getSeconds() * 1000;
-    let endMs = toMs(logOffTime);
-    if (endMs <= todayMs) endMs += 24 * 60 * 60 * 1000;
-    const durationMs = endMs - todayMs;
+  const targetAt = clockState(clock.at, now).at;
+
+  function shift(minutes: number) {
+    setClock((prev) => clockState(addMinutes(prev.at, minutes)));
+  }
+
+  function edit(part: ClockPart, text: string) {
+    setClock((prev) => {
+      if (!text || (part === "hour" && text === "0")) return { ...prev, [part]: text };
+
+      const isHour = part === "hour";
+      const raw = Number(text);
+      const value = Math.min(isHour ? 12 : 59, Math.max(isHour ? 1 : 0, raw));
+      const at = setDateParts(
+        prev.at,
+        isHour
+          ? { hours: (value % 12) + (format(prev.at, "a") === "PM" ? 12 : 0) }
+          : { minutes: value },
+      );
+      const next = clockState(at);
+
+      return raw === value ? { ...next, [part]: text } : next;
+    });
+  }
+
+  function canQuickShift(minutes: number) {
+    const shifted = addMinutes(targetAt, minutes);
+    return shifted > now && shifted < addDays(now, 1);
+  }
+
+  function quickShift(minutes: number) {
+    const current = new Date();
+
+    setNow(current);
+    setClock((prev) => {
+      const shifted = addMinutes(clockState(prev.at, current).at, minutes);
+      return shifted > current && shifted < addDays(current, 1)
+        ? clockState(shifted, current)
+        : prev;
+    });
+  }
+
+  function reset() {
+    const current = new Date();
+    setNow(current);
+    setClock(defaultClock(current));
+  }
+
+  function start() {
+    const current = new Date();
+    const durationMs = differenceInMilliseconds(clockState(clock.at, current).at, current);
+
     setRemaining(durationMs);
     setStarted(true);
     onStart(durationMs);
   }
 
   useEffect(() => {
+    if (started) return;
+
+    const timer = setInterval(() => setNow(new Date()), 30 * 1000);
+    return () => clearInterval(timer);
+  }, [started]);
+
+  useEffect(() => {
     if (!started) return;
+
     const timer = setInterval(() => {
-      setRemaining((prev) => Math.max(0, prev - 1000));
+      setRemaining((previous) => Math.max(0, previous - 1000));
     }, 1000);
     return () => clearInterval(timer);
   }, [started]);
 
   return (
-    <section className="max-w-lg mx-auto mt-8 px-6">
-      <h2
-        className={`text-white text-xl mb-4 transition-opacity duration-500 ${
-          started ? "opacity-0" : "opacity-100"
-        }`}
-      >
-        Please input your log off time
-      </h2>
-      <div className="h-24">
-        {started ? (
-          <div className="flex items-center justify-center w-full h-full text-white text-6xl rounded-md bg-neutral-800 px-6 font-mono font-bold tracking-wider">
-            {fmt(remaining)}
+    <section className="mx-auto mt-8 w-full max-w-xl px-6 text-white">
+      {started ? (
+        <div className="flex h-24 w-full items-center justify-center rounded-md bg-neutral-800 px-6 font-mono text-5xl font-bold tabular-nums tracking-wider text-white sm:text-6xl">
+          {countdown(remaining)}
+        </div>
+      ) : (
+        <div>
+          <div className="mb-3">
+            <h2 className="text-xl font-semibold">Set log off time:</h2>
+            <p className="mt-1 text-sm font-medium text-neutral-400">
+              {targetLabel(targetAt, now)}
+            </p>
           </div>
-        ) : (
-          <input
-            type="time"
-            value={logOffTime}
-            onChange={(e) => setLogOffTime(e.target.value)}
-            className="block w-full h-full bg-neutral-800 text-white text-6xl font-mono font-bold tracking-wider rounded-md px-6 text-center focus:outline-none focus:ring-2 focus:ring-neutral-500"
-          />
-        )}
-      </div>
-      <button
-        onClick={handleSetSchedule}
-        disabled={!logOffTime || started}
-        className={`mt-4 bg-neutral-700 text-white px-6 py-2 rounded hover:bg-neutral-600 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-opacity duration-500 ${
-          started ? "opacity-0 pointer-events-none" : ""
-        }`}
-      >
-        Start
-      </button>
+
+          <div className="rounded-lg bg-neutral-800/90 p-4 shadow-2xl shadow-black/30 ring-1 ring-white/10">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_58px] items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_72px] sm:gap-4">
+              <TimeField
+                label="hour"
+                value={clock.hour}
+                step={60}
+                onChange={(value) => edit("hour", value)}
+                onShift={shift}
+              />
+              <div className="flex items-center pb-7 font-mono text-3xl font-bold text-neutral-500 sm:text-5xl">
+                :
+              </div>
+              <TimeField
+                label="min"
+                value={clock.minute}
+                step={MINUTE_STEP}
+                onChange={(value) => edit("minute", value)}
+                onShift={shift}
+              />
+              <button
+                type="button"
+                onClick={() => setClock((prev) => clockState(addHours(prev.at, 12)))}
+                className="cursor-pointer rounded-md bg-neutral-700 text-lg font-bold text-white focus:outline-none sm:text-2xl"
+                aria-label={`Switch to ${format(clock.at, "a") === "AM" ? "PM" : "AM"}`}
+              >
+                {format(clock.at, "a")}
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {QUICK_OFFSETS.map((offset) => (
+                <QuickOffset
+                  key={offset.label}
+                  {...offset}
+                  canShift={canQuickShift}
+                  onShift={quickShift}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex h-10 w-28 cursor-pointer items-center justify-center rounded-md bg-neutral-800 text-sm font-semibold text-neutral-300 transition-colors hover:bg-neutral-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={start}
+              className="inline-flex h-10 w-28 cursor-pointer items-center justify-center gap-2 rounded-md bg-white text-sm font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70"
+            >
+              <Play className="h-4 w-4 fill-neutral-950" />
+              Start
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
