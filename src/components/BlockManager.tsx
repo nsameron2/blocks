@@ -17,6 +17,7 @@ const COMPLETION_SOUNDS: Record<CompletionTone, string> = {
 interface BlockManagerProps {
   totalDurationMs: number;
   scheduleStarted: boolean;
+  onTotalAllocatedChange: (totalAllocated: number) => void;
 }
 
 function completionToneForBlock(block: BlockData): CompletionTone {
@@ -25,7 +26,11 @@ function completionToneForBlock(block: BlockData): CompletionTone {
   return "neutral";
 }
 
-export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerProps) {
+export function BlockManager({
+  totalDurationMs,
+  scheduleStarted,
+  onTotalAllocatedChange,
+}: BlockManagerProps) {
   const [blocks, setBlocks] = useState<BlockData[]>([
     {
       id: 1,
@@ -167,6 +172,10 @@ export function BlockManager({ totalDurationMs, scheduleStarted }: BlockManagerP
   const totalAllocated = blocks.reduce((sum, b) => sum + b.percent, 0);
   const remainingPercent = Math.max(0, 100 - totalAllocated);
   const newBlockPercent = Math.max(0, Math.min(25, remainingPercent));
+
+  useEffect(() => {
+    onTotalAllocatedChange(totalAllocated);
+  }, [onTotalAllocatedChange, totalAllocated]);
 
   function addEmptyBlock() {
     const id = nextId;

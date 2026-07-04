@@ -157,12 +157,19 @@ function QuickOffset({
   );
 }
 
-export function Schedule({ onStart }: { onStart: (durationMs: number) => void }) {
+export function Schedule({
+  onStart,
+  totalAllocationPercent,
+}: {
+  onStart: (durationMs: number) => void;
+  totalAllocationPercent: number;
+}) {
   const [clock, setClock] = useState(() => defaultClock());
   const [started, setStarted] = useState(false);
   const [remaining, setRemaining] = useState(0);
   const [now, setNow] = useState(() => new Date());
 
+  const allocationComplete = totalAllocationPercent === 100;
   const targetAt = clockState(clock.at, now).at;
 
   function shift(minutes: number) {
@@ -212,6 +219,8 @@ export function Schedule({ onStart }: { onStart: (durationMs: number) => void })
   }
 
   function start() {
+    if (!allocationComplete) return;
+
     const current = new Date();
     const durationMs = differenceInMilliseconds(clockState(clock.at, current).at, current);
 
@@ -303,9 +312,10 @@ export function Schedule({ onStart }: { onStart: (durationMs: number) => void })
             <button
               type="button"
               onClick={start}
-              className="inline-flex h-10 w-28 cursor-pointer items-center justify-center gap-2 rounded-md bg-white text-sm font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70"
+              disabled={!allocationComplete}
+              className="inline-flex h-10 w-28 cursor-pointer items-center justify-center gap-2 rounded-md bg-white text-sm font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 disabled:hover:bg-neutral-700 disabled:focus:ring-neutral-600"
             >
-              <Play className="h-4 w-4 fill-neutral-950" />
+              <Play className="h-4 w-4 fill-current" />
               Start
             </button>
           </div>
