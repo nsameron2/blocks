@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calendar } from "./Calendar";
-import { Schedule } from "./components/Schedule";
+import { Schedule } from "./Schedule";
+import { Schedule as BlockSchedule } from "./components/Schedule";
 import { BlockManager } from "./components/BlockManager";
 import {
   NavigationMenu,
@@ -25,7 +25,7 @@ function BlocksPage({ targetLogOffAt }: { targetLogOffAt: Date | null }) {
 
   return (
     <section className="flow-root min-h-screen pb-32 pt-8">
-      <Schedule
+      <BlockSchedule
         onStart={handleScheduleStart}
         totalAllocationPercent={totalAllocationPercent}
         targetLogOffAt={targetLogOffAt}
@@ -67,8 +67,8 @@ function App() {
         {currentPage === "blocks" && (
           <BlocksPage targetLogOffAt={targetLogOffAt} />
         )}
-        {currentPage === "calendar" && (
-          <Calendar
+        {currentPage === "schedule" && (
+          <Schedule
             logOffSchedule={logOffSchedule}
             onLogOffScheduleSave={setLogOffSchedule}
           />

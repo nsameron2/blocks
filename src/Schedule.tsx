@@ -49,15 +49,15 @@ function dateFromKey(dateKey: string) {
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
-interface CalendarProps {
+interface ScheduleProps {
   logOffSchedule: LogOffSchedule;
   onLogOffScheduleSave: (schedule: LogOffSchedule) => void;
 }
 
-export function Calendar({
+export function Schedule({
   logOffSchedule,
   onLogOffScheduleSave,
-}: CalendarProps) {
+}: ScheduleProps) {
   const [draftDefaultTime, setDraftDefaultTime] = useState(
     logOffSchedule.defaultTime,
   );
@@ -166,7 +166,7 @@ export function Calendar({
   return (
     <section
       className="flex min-h-screen justify-center px-8 pb-24 pt-24"
-      aria-label="Calendar"
+      aria-label="Schedule"
     >
       <div className="w-full max-w-3xl">
         <h1 className="text-4xl font-bold text-white sm:text-5xl">

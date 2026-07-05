@@ -70,7 +70,7 @@ body,
 }
 
 
-/* react-date-picker calendar in Calendar */
+/* react-day-picker date picker in Schedule */
 .log-off-date-picker.rdp-root {
   --rdp-accent-color: white;
   --rdp-accent-background-color: rgb(64 64 64);

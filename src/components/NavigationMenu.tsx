@@ -1,8 +1,8 @@
-export type NavigationPage = "blocks" | "calendar" | "settings";
+export type NavigationPage = "blocks" | "schedule" | "settings";
 
 const NAV_ITEMS: { id: NavigationPage; label: string }[] = [
   { id: "blocks", label: "Blocks" },
-  { id: "calendar", label: "Calendar" },
+  { id: "schedule", label: "Schedule" },
   { id: "settings", label: "Settings" },
 ];
 
