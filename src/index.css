@@ -82,6 +82,7 @@ body,
   width: 100%;
 }
 
+/* react-day-picker calendar in Calendar */
 .log-off-date-picker .rdp-months,
 .log-off-date-picker .rdp-month,
 .log-off-date-picker .rdp-month_grid {
