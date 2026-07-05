@@ -156,13 +156,16 @@ export function Calendar({
     selectedDateIsToday && todayHasSelectableTime
       ? format(nextFutureMinute, "HH:mm")
       : undefined;
+  const selectedDateLabel = selectedDate
+    ? format(selectedDate, "MMMM d, yyyy")
+    : "Select a date";
   const overriddenDates = Object.keys(logOffSchedule.dateOverrides)
     .map(dateFromKey)
     .filter((date): date is Date => Boolean(date));
 
   return (
     <section
-      className="flex min-h-screen justify-center px-8 pt-24"
+      className="flex min-h-screen justify-center px-8 pb-24 pt-24"
       aria-label="Calendar"
     >
       <div className="w-full max-w-3xl">
@@ -170,98 +173,122 @@ export function Calendar({
           Log Off Schedule
         </h1>
 
-        <div className="mx-auto mt-10 w-full max-w-xl">
-          <label
-            className="block text-xl font-semibold text-neutral-200"
-            htmlFor="global-log-off-time"
-          >
-            Default time
-          </label>
-          <input
-            id="global-log-off-time"
-            type="time"
-            value={draftDefaultTime}
-            onChange={(event) => setDraftDefaultTime(event.target.value)}
-            className="mt-3 h-14 w-full rounded-md bg-neutral-800 px-4 font-mono text-2xl font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 sm:h-16 sm:text-3xl"
-          />
-
-          <button
-            type="button"
-            onClick={saveDefaultTime}
-            className="mt-4 inline-flex h-12 w-28 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70 sm:h-14 sm:w-36 sm:text-lg"
-          >
-            Save
-          </button>
-
-          <h2 className="mt-12 text-xl font-semibold text-neutral-200">
-            Weekly overrides
-          </h2>
-          <div className="mt-3 overflow-hidden rounded-md bg-neutral-800 ring-1 ring-white/10">
-            {WEEKDAYS.map((weekday, index) => (
-              <div
-                key={weekday.value}
-                className={`flex items-center justify-between gap-4 px-4 py-3 ${
-                  index === 0 ? "" : "border-t border-white/10"
-                }`}
-              >
+        <div className="mx-auto mt-10 w-full max-w-2xl space-y-10">
+          <section>
+            <h2 className="text-xl font-semibold text-neutral-200">
+              Default time
+            </h2>
+            <div className="mt-3 overflow-hidden rounded-md bg-neutral-800 ring-1 ring-white/10">
+              <div className="flex min-h-20 flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <label
                   className="text-base font-semibold text-neutral-200 sm:text-lg"
-                  htmlFor={`weekday-log-off-time-${weekday.value}`}
+                  htmlFor="global-log-off-time"
                 >
-                  {weekday.label}
+                  Time
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex w-full items-center gap-3 sm:w-auto">
                   <input
-                    id={`weekday-log-off-time-${weekday.value}`}
+                    id="global-log-off-time"
                     type="time"
-                    value={draftWeekdayTimes[weekday.value] ?? ""}
-                    onChange={(event) =>
-                      updateWeekdayTime(weekday.value, event.target.value)
-                    }
-                    className="h-11 w-40 rounded-md bg-neutral-900 px-3 font-mono text-lg font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
+                    value={draftDefaultTime}
+                    onChange={(event) => setDraftDefaultTime(event.target.value)}
+                    className="h-12 min-w-0 flex-1 rounded-md bg-neutral-900 px-3 font-mono text-xl font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 sm:w-44 sm:flex-none"
                   />
                   <button
                     type="button"
-                    onClick={() => updateWeekdayTime(weekday.value, "")}
-                    disabled={!draftWeekdayTimes[weekday.value]}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
-                    aria-label={`Clear ${weekday.label} override`}
-                    title="Use default time"
+                    onClick={saveDefaultTime}
+                    className="inline-flex h-12 w-24 shrink-0 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70"
                   >
-                    <X className="h-4 w-4" />
+                    Save
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={saveWeekdayTimes}
-            className="mt-4 inline-flex h-12 w-28 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70 sm:h-14 sm:w-36 sm:text-lg"
-          >
-            Save
-          </button>
-
-          <h2 className="mt-12 text-xl font-semibold text-neutral-200">
-            Date overrides
-          </h2>
-          <div className="mt-3 overflow-hidden rounded-md bg-neutral-800 ring-1 ring-white/10">
-            <div className="px-4 py-4">
-              <DayPicker
-                mode="single"
-                selected={selectedDate}
-                onSelect={selectDate}
-                disabled={{ before: disabledBeforeDate }}
-                defaultMonth={selectedDate ?? now}
-                modifiers={{ overridden: overriddenDates }}
-                modifiersClassNames={{ overridden: "rdp-overridden" }}
-                className="log-off-date-picker"
-              />
             </div>
+          </section>
 
-            <div className="border-t border-white/10 px-4 py-4">
-              <div className="mt-3 flex items-center gap-3">
+          <section>
+            <h2 className="text-xl font-semibold text-neutral-200">
+              Weekly overrides
+            </h2>
+            <div className="mt-3 overflow-hidden rounded-md bg-neutral-800 ring-1 ring-white/10">
+              {WEEKDAYS.map((weekday, index) => (
+                <div
+                  key={weekday.value}
+                  className={`flex min-h-16 flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+                    index === 0 ? "" : "border-t border-white/10"
+                  }`}
+                >
+                  <label
+                    className="text-base font-semibold text-neutral-200 sm:text-lg"
+                    htmlFor={`weekday-log-off-time-${weekday.value}`}
+                  >
+                    {weekday.label}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id={`weekday-log-off-time-${weekday.value}`}
+                      type="time"
+                      value={draftWeekdayTimes[weekday.value] ?? ""}
+                      onChange={(event) =>
+                        updateWeekdayTime(weekday.value, event.target.value)
+                      }
+                      className="h-12 min-w-0 flex-1 rounded-md bg-neutral-900 px-3 font-mono text-xl font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 sm:w-44 sm:flex-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateWeekdayTime(weekday.value, "")}
+                      disabled={!draftWeekdayTimes[weekday.value]}
+                      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
+                      aria-label={`Clear ${weekday.label} override`}
+                      title="Use default time"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={saveWeekdayTimes}
+                className="inline-flex h-12 w-32 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70"
+              >
+                Save weekly
+              </button>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-neutral-200">
+              Date overrides
+            </h2>
+            <div className="mt-3 overflow-hidden rounded-md bg-neutral-800 ring-1 ring-white/10">
+              <div className="px-4 py-4">
+                <DayPicker
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={selectDate}
+                  disabled={{ before: disabledBeforeDate }}
+                  defaultMonth={selectedDate ?? now}
+                  modifiers={{ overridden: overriddenDates }}
+                  modifiersClassNames={{ overridden: "rdp-overridden" }}
+                  className="log-off-date-picker"
+                />
+              </div>
+
+              <div className="grid gap-3 border-t border-white/10 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_176px_112px] sm:items-center">
+                <div className="min-w-0">
+                  <label
+                    className="block text-base font-semibold text-neutral-200 sm:text-lg"
+                    htmlFor="date-log-off-time"
+                  >
+                    Selected date
+                  </label>
+                  <p className="mt-1 truncate text-sm font-medium text-neutral-400">
+                    {selectedDateLabel}
+                  </p>
+                </div>
                 <input
                   id="date-log-off-time"
                   type="time"
@@ -271,19 +298,19 @@ export function Calendar({
                   onChange={(event) =>
                     setDraftDateOverrideTime(event.target.value)
                   }
-                  className="h-11 min-w-0 flex-1 rounded-md bg-neutral-900 px-3 font-mono text-lg font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="h-12 min-w-0 rounded-md bg-neutral-900 px-3 font-mono text-xl font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-40"
                 />
                 <button
                   type="button"
                   onClick={saveDateOverride}
                   disabled={!canSaveDateOverride}
-                  className="inline-flex h-11 w-24 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 disabled:hover:bg-neutral-700"
+                  className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 disabled:hover:bg-neutral-700"
                 >
-                  Save
+                  Save date
                 </button>
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </section>

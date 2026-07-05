@@ -69,20 +69,21 @@ body,
     drop-shadow(0 -1px 0 white);
 }
 
+
+/* react-date-picker calendar in Calendar */
 .log-off-date-picker.rdp-root {
   --rdp-accent-color: white;
   --rdp-accent-background-color: rgb(64 64 64);
-  --rdp-day-height: 40px;
-  --rdp-day-width: 40px;
-  --rdp-day_button-height: 36px;
-  --rdp-day_button-width: 36px;
+  --rdp-day-height: 44px;
+  --rdp-day-width: 44px;
+  --rdp-day_button-height: 40px;
+  --rdp-day_button-width: 40px;
   --rdp-day_button-border-radius: 6px;
   --rdp-selected-border: 0;
   color: white;
   width: 100%;
 }
 
-/* react-day-picker calendar in Calendar */
 .log-off-date-picker .rdp-months,
 .log-off-date-picker .rdp-month,
 .log-off-date-picker .rdp-month_grid {
