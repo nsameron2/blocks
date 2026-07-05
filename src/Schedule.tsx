@@ -247,15 +247,15 @@ export function Schedule({
                   </div>
                 </div>
               ))}
-            </div>
-            <div className="mt-3 flex justify-end">
-              <button
-                type="button"
-                onClick={saveWeekdayTimes}
-                className="inline-flex h-12 w-32 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70"
-              >
-                Save weekly
-              </button>
+              <div className="flex justify-end border-t border-white/10 px-4 py-6">
+                <button
+                  type="button"
+                  onClick={saveWeekdayTimes}
+                  className="inline-flex h-12 w-32 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70"
+                >
+                  Save weekly
+                </button>
+              </div>
             </div>
           </section>
 
