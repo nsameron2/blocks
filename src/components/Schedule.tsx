@@ -43,6 +43,12 @@ function clockState(clockTime: Date, from = new Date()) {
   return { at, hour: format(at, "hh"), minute: format(at, "mm") };
 }
 
+function exactClockState(targetAt: Date) {
+  const at = startOfMinute(targetAt);
+
+  return { at, hour: format(at, "hh"), minute: format(at, "mm") };
+}
+
 function defaultClock(from = new Date()) {
   return clockState(
     roundToNearestMinutes(addMinutes(from, DEFAULT_OFFSET_MINUTES), {
@@ -160,20 +166,31 @@ function QuickOffset({
 export function Schedule({
   onStart,
   totalAllocationPercent,
+  targetLogOffAt,
 }: {
   onStart: (durationMs: number) => void;
   totalAllocationPercent: number;
+  targetLogOffAt?: Date | null;
 }) {
-  const [clock, setClock] = useState(() => defaultClock());
+  const targetLogOffAtMs = targetLogOffAt?.getTime() ?? null;
+  const [clock, setClock] = useState(
+    () => (targetLogOffAt ? exactClockState(targetLogOffAt) : defaultClock()),
+  );
   const [started, setStarted] = useState(false);
   const [remaining, setRemaining] = useState(0);
   const [now, setNow] = useState(() => new Date());
 
   const allocationComplete = totalAllocationPercent === 100;
-  const targetAt = clockState(clock.at, now).at;
+  const targetAt = clock.at > now ? clock.at : clockState(clock.at, now).at;
 
   function shift(minutes: number) {
-    setClock((prev) => clockState(addMinutes(prev.at, minutes)));
+    setClock((prev) => {
+      const current = new Date();
+      const currentTarget =
+        prev.at > current ? prev.at : clockState(prev.at, current).at;
+
+      return exactClockState(addMinutes(currentTarget, minutes));
+    });
   }
 
   function edit(part: ClockPart, text: string) {
@@ -189,7 +206,7 @@ export function Schedule({
           ? { hours: (value % 12) + (format(prev.at, "a") === "PM" ? 12 : 0) }
           : { minutes: value },
       );
-      const next = clockState(at);
+      const next = at > new Date() ? exactClockState(at) : clockState(at);
 
       return raw === value ? { ...next, [part]: text } : next;
     });
@@ -197,7 +214,7 @@ export function Schedule({
 
   function canQuickShift(minutes: number) {
     const shifted = addMinutes(targetAt, minutes);
-    return shifted > now && shifted < addDays(now, 1);
+    return shifted > now;
   }
 
   function quickShift(minutes: number) {
@@ -205,9 +222,11 @@ export function Schedule({
 
     setNow(current);
     setClock((prev) => {
-      const shifted = addMinutes(clockState(prev.at, current).at, minutes);
-      return shifted > current && shifted < addDays(current, 1)
-        ? clockState(shifted, current)
+      const currentTarget =
+        prev.at > current ? prev.at : clockState(prev.at, current).at;
+      const shifted = addMinutes(currentTarget, minutes);
+      return shifted > current
+        ? exactClockState(shifted)
         : prev;
     });
   }
@@ -222,12 +241,23 @@ export function Schedule({
     if (!allocationComplete) return;
 
     const current = new Date();
-    const durationMs = differenceInMilliseconds(clockState(clock.at, current).at, current);
+    const scheduledAt =
+      clock.at > current ? clock.at : clockState(clock.at, current).at;
+    const durationMs = differenceInMilliseconds(scheduledAt, current);
 
     setRemaining(durationMs);
     setStarted(true);
     onStart(durationMs);
   }
+
+  useEffect(() => {
+    if (started || targetLogOffAtMs === null) return;
+
+    const targetAt = new Date(targetLogOffAtMs);
+
+    setNow(new Date());
+    setClock(exactClockState(targetAt));
+  }, [started, targetLogOffAtMs]);
 
   useEffect(() => {
     if (started) return;
@@ -281,7 +311,9 @@ export function Schedule({
               />
               <button
                 type="button"
-                onClick={() => setClock((prev) => clockState(addHours(prev.at, 12)))}
+                onClick={() =>
+                  setClock((prev) => exactClockState(addHours(prev.at, 12)))
+                }
                 className="cursor-pointer rounded-md bg-neutral-700 text-lg font-bold text-white focus:outline-none sm:text-2xl"
                 aria-label={`Switch to ${format(clock.at, "a") === "AM" ? "PM" : "AM"}`}
               >
