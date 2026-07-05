@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
+import {
+  addDays,
+  addMinutes,
+  format,
+  isSameDay,
+  set as setDateParts,
+  startOfDay,
+} from "date-fns";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/style.css";
 import { X } from "lucide-react";
-import type { LogOffSchedule, Weekday } from "./logOffSchedule";
+import {
+  dateKeyFor,
+  type LogOffSchedule,
+  type Weekday,
+} from "./logOffSchedule";
 
 const WEEKDAYS: { label: string; value: Weekday }[] = [
   { label: "Monday", value: 1 },
@@ -11,6 +25,29 @@ const WEEKDAYS: { label: string; value: Weekday }[] = [
   { label: "Saturday", value: 6 },
   { label: "Sunday", value: 0 },
 ];
+
+function timeToDate(date: Date, time: string) {
+  const match = time.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+
+  return setDateParts(startOfDay(date), {
+    hours,
+    minutes,
+    seconds: 0,
+    milliseconds: 0,
+  });
+}
+
+function dateFromKey(dateKey: string) {
+  const match = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
 
 interface CalendarProps {
   logOffSchedule: LogOffSchedule;
@@ -27,6 +64,9 @@ export function Calendar({
   const [draftWeekdayTimes, setDraftWeekdayTimes] = useState(
     logOffSchedule.weekdayOverrides,
   );
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [draftDateOverrideTime, setDraftDateOverrideTime] = useState("");
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     setDraftDefaultTime(logOffSchedule.defaultTime);
@@ -35,6 +75,19 @@ export function Calendar({
   useEffect(() => {
     setDraftWeekdayTimes(logOffSchedule.weekdayOverrides);
   }, [logOffSchedule.weekdayOverrides]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30 * 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+
+    setDraftDateOverrideTime(
+      logOffSchedule.dateOverrides[dateKeyFor(selectedDate)] ?? "",
+    );
+  }, [logOffSchedule.dateOverrides, selectedDate]);
 
   function updateWeekdayTime(weekday: Weekday, time: string) {
     setDraftWeekdayTimes((previous) => ({
@@ -65,6 +118,47 @@ export function Calendar({
       weekdayOverrides,
     });
   }
+
+  function selectDate(date: Date | undefined) {
+    setSelectedDate(date);
+    setDraftDateOverrideTime(
+      date ? logOffSchedule.dateOverrides[dateKeyFor(date)] ?? "" : "",
+    );
+  }
+
+  function saveDateOverride() {
+    if (!selectedDate || !dateOverrideAt || dateOverrideAt <= now) return;
+
+    onLogOffScheduleSave({
+      ...logOffSchedule,
+      dateOverrides: {
+        ...logOffSchedule.dateOverrides,
+        [dateKeyFor(selectedDate)]: draftDateOverrideTime,
+      },
+    });
+  }
+
+  const minimumSelectableDate = startOfDay(now);
+  const nextFutureMinute = addMinutes(now, 1);
+  const todayHasSelectableTime = isSameDay(nextFutureMinute, now);
+  const disabledBeforeDate = todayHasSelectableTime
+    ? minimumSelectableDate
+    : startOfDay(addDays(now, 1));
+  const selectedDateIsToday = selectedDate ? isSameDay(selectedDate, now) : false;
+  const dateOverrideAt = selectedDate
+    ? timeToDate(selectedDate, draftDateOverrideTime)
+    : null;
+  const canSaveDateOverride =
+    Boolean(selectedDate) && Boolean(dateOverrideAt) && dateOverrideAt! > now;
+  const dateOverrideInputDisabled =
+    !selectedDate || (selectedDateIsToday && !todayHasSelectableTime);
+  const dateOverrideMinTime =
+    selectedDateIsToday && todayHasSelectableTime
+      ? format(nextFutureMinute, "HH:mm")
+      : undefined;
+  const overriddenDates = Object.keys(logOffSchedule.dateOverrides)
+    .map(dateFromKey)
+    .filter((date): date is Date => Boolean(date));
 
   return (
     <section
@@ -148,6 +242,48 @@ export function Calendar({
           >
             Save
           </button>
+
+          <h2 className="mt-12 text-xl font-semibold text-neutral-200">
+            Date overrides
+          </h2>
+          <div className="mt-3 overflow-hidden rounded-md bg-neutral-800 ring-1 ring-white/10">
+            <div className="px-4 py-4">
+              <DayPicker
+                mode="single"
+                selected={selectedDate}
+                onSelect={selectDate}
+                disabled={{ before: disabledBeforeDate }}
+                defaultMonth={selectedDate ?? now}
+                modifiers={{ overridden: overriddenDates }}
+                modifiersClassNames={{ overridden: "rdp-overridden" }}
+                className="log-off-date-picker"
+              />
+            </div>
+
+            <div className="border-t border-white/10 px-4 py-4">
+              <div className="mt-3 flex items-center gap-3">
+                <input
+                  id="date-log-off-time"
+                  type="time"
+                  value={draftDateOverrideTime}
+                  min={dateOverrideMinTime}
+                  disabled={dateOverrideInputDisabled}
+                  onChange={(event) =>
+                    setDraftDateOverrideTime(event.target.value)
+                  }
+                  className="h-11 min-w-0 flex-1 rounded-md bg-neutral-900 px-3 font-mono text-lg font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-40"
+                />
+                <button
+                  type="button"
+                  onClick={saveDateOverride}
+                  disabled={!canSaveDateOverride}
+                  className="inline-flex h-11 w-24 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 disabled:hover:bg-neutral-700"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

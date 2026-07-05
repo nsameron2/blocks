@@ -49,7 +49,7 @@ function parseDateKey(dateKey: string) {
   return date;
 }
 
-function dateKeyFor(date: Date) {
+export function dateKeyFor(date: Date) {
   return format(date, "yyyy-MM-dd");
 }
 
