@@ -15,6 +15,8 @@ import {
 } from "./components/NavigationMenu";
 import {
   createDefaultAppState,
+  loadAppState,
+  saveAppState,
   type AppState,
   type BlocksState,
   type BlockTimerState,
@@ -24,6 +26,8 @@ import {
   type LogOffSchedule,
 } from "./logOffSchedule";
 import { Settings } from "./Settings";
+
+const APP_STATE_SAVE_DEBOUNCE_MS = 500;
 
 function applyStateUpdate<T>(current: T, update: SetStateAction<T>) {
   return typeof update === "function"
@@ -70,6 +74,7 @@ function BlocksPage({
 function App() {
   const [currentPage, setCurrentPage] = useState<NavigationPage>("blocks");
   const [appState, setAppState] = useState<AppState>(createDefaultAppState);
+  const [appStateLoaded, setAppStateLoaded] = useState(false);
   const [resolutionNow, setResolutionNow] = useState(() => new Date());
 
   const targetLogOffAt = useMemo(
@@ -107,6 +112,43 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateAppState() {
+      try {
+        const savedState = await loadAppState();
+        if (!cancelled) {
+          setAppState(savedState);
+        }
+      } catch (error) {
+        console.error("Failed to load app state", error);
+      } finally {
+        if (!cancelled) {
+          setAppStateLoaded(true);
+        }
+      }
+    }
+
+    void hydrateAppState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!appStateLoaded) return;
+
+    const saveTimer = window.setTimeout(() => {
+      void saveAppState(appState).catch((error) => {
+        console.error("Failed to save app state", error);
+      });
+    }, APP_STATE_SAVE_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(saveTimer);
+  }, [appState, appStateLoaded]);
+
+  useEffect(() => {
     const timer = setInterval(() => setResolutionNow(new Date()), 30 * 1000);
     return () => clearInterval(timer);
   }, []);
@@ -121,6 +163,7 @@ function App() {
       <div className="min-h-screen pl-64 sm:pl-96">
         {currentPage === "blocks" && (
           <BlocksPage
+            key={appStateLoaded ? "hydrated" : "default"}
             blocksState={appState.blocks}
             blockTimerState={appState.blockTimer}
             onBlocksStateChange={setBlocksState}

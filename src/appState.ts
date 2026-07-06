@@ -36,11 +36,19 @@ export interface BlockTimerState {
 }
 
 export async function loadAppState(): Promise<AppState> {
+  if (!isTauriRuntime()) {
+    return createDefaultAppState();
+  }
+
   const state = await invoke<unknown>("load_app_state");
   return normalizeAppState(state);
 }
 
 export async function saveAppState(state: AppState): Promise<void> {
+  if (!isTauriRuntime()) {
+    return;
+  }
+
   await invoke("save_app_state", { state: normalizeAppState(state) });
 }
 
@@ -241,6 +249,10 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   }
 
   return value as Record<string, unknown>;
+}
+
+function isTauriRuntime() {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
 function integerOr(value: unknown, fallback: number) {
