@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   addDays,
   addHours,
@@ -15,6 +21,7 @@ import {
   startOfMinute,
 } from "date-fns";
 import { ChevronDown, ChevronUp, Minus, Play, Plus } from "lucide-react";
+import type { BlockTimerState } from "../appState";
 
 const MINUTE_STEP = 5;
 const DEFAULT_OFFSET_MINUTES = 90;
@@ -30,6 +37,12 @@ const QUICK_BUTTON_CLASS =
   "flex cursor-pointer items-center justify-center focus:outline-none disabled:cursor-not-allowed disabled:opacity-30";
 
 type ClockPart = "hour" | "minute";
+
+interface ClockState {
+  at: Date;
+  hour: string;
+  minute: string;
+}
 
 function clockState(clockTime: Date, from = new Date()) {
   const today = setDateParts(startOfMinute(from), {
@@ -49,6 +62,10 @@ function exactClockState(targetAt: Date) {
   return { at, hour: format(at, "hh"), minute: format(at, "mm") };
 }
 
+function clockStateFromTarget(targetAt: Date, from = new Date()) {
+  return targetAt > from ? exactClockState(targetAt) : clockState(targetAt, from);
+}
+
 function defaultClock(from = new Date()) {
   return clockState(
     roundToNearestMinutes(addMinutes(from, DEFAULT_OFFSET_MINUTES), {
@@ -57,6 +74,13 @@ function defaultClock(from = new Date()) {
     }),
     from,
   );
+}
+
+function dateFromIso(value: string | null) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function countdown(ms: number) {
@@ -164,24 +188,31 @@ function QuickOffset({
 }
 
 export function Schedule({
-  onStart,
+  state,
+  onStateChange,
   totalAllocationPercent,
   targetLogOffAt,
 }: {
-  onStart: (durationMs: number) => void;
+  state: BlockTimerState;
+  onStateChange: Dispatch<SetStateAction<BlockTimerState>>;
   totalAllocationPercent: number;
   targetLogOffAt?: Date | null;
 }) {
   const targetLogOffAtMs = targetLogOffAt?.getTime() ?? null;
-  const [clock, setClock] = useState(
-    () => (targetLogOffAt ? exactClockState(targetLogOffAt) : defaultClock()),
-  );
-  const [started, setStarted] = useState(false);
-  const [remaining, setRemaining] = useState(0);
+  const stateTargetAt = dateFromIso(state.targetAt);
+  const stateTargetAtMs = stateTargetAt?.getTime() ?? null;
+  const previousTargetLogOffAtMsRef = useRef<number | null>(targetLogOffAtMs);
+  const [clock, setClock] = useState<ClockState>(() => {
+    if (stateTargetAt) return clockStateFromTarget(stateTargetAt);
+    return targetLogOffAt ? exactClockState(targetLogOffAt) : defaultClock();
+  });
   const [now, setNow] = useState(() => new Date());
+  const started = state.started;
+  const remaining = state.remainingMs;
 
   const allocationComplete = totalAllocationPercent === 100;
   const targetAt = clock.at > now ? clock.at : clockState(clock.at, now).at;
+  const targetAtIso = targetAt.toISOString();
 
   function shift(minutes: number) {
     setClock((prev) => {
@@ -233,8 +264,16 @@ export function Schedule({
 
   function reset() {
     const current = new Date();
+    const nextClock = defaultClock(current);
+
     setNow(current);
-    setClock(defaultClock(current));
+    setClock(nextClock);
+    onStateChange({
+      targetAt: nextClock.at.toISOString(),
+      started: false,
+      totalDurationMs: 0,
+      remainingMs: 0,
+    });
   }
 
   function start() {
@@ -245,19 +284,60 @@ export function Schedule({
       clock.at > current ? clock.at : clockState(clock.at, current).at;
     const durationMs = differenceInMilliseconds(scheduledAt, current);
 
-    setRemaining(durationMs);
-    setStarted(true);
-    onStart(durationMs);
+    onStateChange({
+      targetAt: scheduledAt.toISOString(),
+      started: true,
+      totalDurationMs: durationMs,
+      remainingMs: durationMs,
+    });
   }
+
+  useEffect(() => {
+    if (started || stateTargetAtMs === null) return;
+
+    const current = new Date();
+
+    setNow(current);
+    setClock(clockStateFromTarget(new Date(stateTargetAtMs), current));
+  }, [started, stateTargetAtMs]);
 
   useEffect(() => {
     if (started || targetLogOffAtMs === null) return;
 
-    const targetAt = new Date(targetLogOffAtMs);
+    const previousTargetLogOffAtMs = previousTargetLogOffAtMsRef.current;
+    previousTargetLogOffAtMsRef.current = targetLogOffAtMs;
 
-    setNow(new Date());
-    setClock(exactClockState(targetAt));
-  }, [started, targetLogOffAtMs]);
+    if (previousTargetLogOffAtMs === targetLogOffAtMs) return;
+
+    onStateChange({
+      targetAt: new Date(targetLogOffAtMs).toISOString(),
+      started: false,
+      totalDurationMs: 0,
+      remainingMs: 0,
+    });
+  }, [onStateChange, started, targetLogOffAtMs]);
+
+  useEffect(() => {
+    if (started) return;
+
+    onStateChange((previous) => {
+      if (
+        previous.targetAt === targetAtIso &&
+        previous.started === false &&
+        previous.totalDurationMs === 0 &&
+        previous.remainingMs === 0
+      ) {
+        return previous;
+      }
+
+      return {
+        targetAt: targetAtIso,
+        started: false,
+        totalDurationMs: 0,
+        remainingMs: 0,
+      };
+    });
+  }, [onStateChange, started, targetAtIso]);
 
   useEffect(() => {
     if (started) return;
@@ -270,10 +350,15 @@ export function Schedule({
     if (!started) return;
 
     const timer = setInterval(() => {
-      setRemaining((previous) => Math.max(0, previous - 1000));
+      onStateChange((previous) => {
+        const remainingMs = Math.max(0, previous.remainingMs - 1000);
+        if (remainingMs === previous.remainingMs) return previous;
+
+        return { ...previous, remainingMs };
+      });
     }, 1000);
     return () => clearInterval(timer);
-  }, [started]);
+  }, [onStateChange, started]);
 
   return (
     <section className="mx-auto mt-8 w-full max-w-xl px-6 text-white">

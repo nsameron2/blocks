@@ -1,9 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import confetti from "canvas-confetti";
 import { RefreshCw } from "lucide-react";
 import completeBadSound from "../assets/sounds/complete-bad.mp3";
 import completeGoodSound from "../assets/sounds/complete-good.mp3";
 import completeNeutralSound from "../assets/sounds/complete-neutral.mp3";
+import { createDefaultBlocksState, type BlocksState } from "../appState";
 import type { Block as BlockData, CompletionTone } from "../types";
 import { Block } from "./Block";
 import { Muxer } from "./Muxer";
@@ -15,9 +22,10 @@ const COMPLETION_SOUNDS: Record<CompletionTone, string> = {
 };
 
 interface BlockManagerProps {
+  blocksState: BlocksState;
+  onBlocksStateChange: Dispatch<SetStateAction<BlocksState>>;
   totalDurationMs: number;
   scheduleStarted: boolean;
-  onTotalAllocatedChange: (totalAllocated: number) => void;
 }
 
 function completionToneForBlock(block: BlockData): CompletionTone {
@@ -26,25 +34,23 @@ function completionToneForBlock(block: BlockData): CompletionTone {
   return "neutral";
 }
 
+function updateBlocks(
+  state: BlocksState,
+  updateBlock: (block: BlockData) => BlockData,
+): BlocksState {
+  return {
+    ...state,
+    blocks: state.blocks.map(updateBlock),
+  };
+}
+
 export function BlockManager({
+  blocksState,
+  onBlocksStateChange,
   totalDurationMs,
   scheduleStarted,
-  onTotalAllocatedChange,
 }: BlockManagerProps) {
-  const [blocks, setBlocks] = useState<BlockData[]>([
-    {
-      id: 1,
-      name: "Idle",
-      color: "bg-gray-500",
-      percent: 25,
-      emoji: "⏲️",
-      good: false,
-    },
-  ]);
-  const [nextId, setNextId] = useState(2);
-  const [activeBlockId, setActiveBlockId] = useState<number | null>(null);
-  const [blockSpent, setBlockSpent] = useState<Record<number, number>>({});
-  const [completionTones, setCompletionTones] = useState<Record<number, CompletionTone>>({});
+  const { blocks, activeBlockId, blockSpent, completionTones } = blocksState;
   const blocksRef = useRef(blocks);
   const completionTonesRef = useRef(completionTones);
   const completionAudioRef = useRef<Partial<Record<CompletionTone, HTMLAudioElement>>>({});
@@ -99,22 +105,35 @@ export function BlockManager({
 
   useEffect(() => {
     if (scheduleStarted && activeBlockId === null && blocks.length > 0) {
-      setActiveBlockId(blocks[0].id);
+      onBlocksStateChange((previous) => {
+        if (previous.activeBlockId !== null || previous.blocks.length === 0) {
+          return previous;
+        }
+
+        return { ...previous, activeBlockId: previous.blocks[0].id };
+      });
     }
-  }, [scheduleStarted, blocks, activeBlockId]);
+  }, [activeBlockId, blocks.length, onBlocksStateChange, scheduleStarted]);
 
   useEffect(() => {
     if (!scheduleStarted || activeBlockId === null) return;
     const timer = setInterval(() => {
-      setBlockSpent((prev) => {
+      onBlocksStateChange((previous) => {
         const block = blocksRef.current.find((b) => b.id === activeBlockId);
-        if (!block) return prev;
-        const currentSpent = prev[activeBlockId] ?? 0;
-        return { ...prev, [activeBlockId]: currentSpent + 1000 };
+        if (!block) return previous;
+        const currentSpent = previous.blockSpent[activeBlockId] ?? 0;
+
+        return {
+          ...previous,
+          blockSpent: {
+            ...previous.blockSpent,
+            [activeBlockId]: currentSpent + 1000,
+          },
+        };
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [scheduleStarted, activeBlockId, totalDurationMs]);
+  }, [activeBlockId, onBlocksStateChange, scheduleStarted, totalDurationMs]);
 
   useEffect(() => {
     if (!scheduleStarted) return;
@@ -165,114 +184,116 @@ export function BlockManager({
 
     if (changed) {
       completionTonesRef.current = nextCompletionTones;
-      setCompletionTones(nextCompletionTones);
+      onBlocksStateChange((previous) => ({
+        ...previous,
+        completionTones: nextCompletionTones,
+      }));
     }
-  }, [blockSpent, blocks, scheduleStarted, totalDurationMs]);
+  }, [blockSpent, blocks, onBlocksStateChange, scheduleStarted, totalDurationMs]);
 
   const totalAllocated = blocks.reduce((sum, b) => sum + b.percent, 0);
   const remainingPercent = Math.max(0, 100 - totalAllocated);
   const newBlockPercent = Math.max(0, Math.min(25, remainingPercent));
 
-  useEffect(() => {
-    onTotalAllocatedChange(totalAllocated);
-  }, [onTotalAllocatedChange, totalAllocated]);
-
   function addEmptyBlock() {
-    const id = nextId;
+    onBlocksStateChange((previous) => {
+      const id = previous.nextBlockId;
 
-    setBlocks((prev) => [
-      ...prev,
-      {
-        id,
-        name: "Block",
-        color: "bg-gray-500",
-        percent: newBlockPercent,
-        emoji: "🆕",
-        good: null,
-      },
-    ]);
-    setNextId((n) => n + 1);
+      return {
+        ...previous,
+        blocks: [
+          ...previous.blocks,
+          {
+            id,
+            name: "Block",
+            color: "bg-gray-500",
+            percent: newBlockPercent,
+            emoji: "🆕",
+            good: null,
+          },
+        ],
+        nextBlockId: id + 1,
+      };
+    });
   }
 
   function renameBlock(id: number, name: string) {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, name } : b))
+    onBlocksStateChange((previous) =>
+      updateBlocks(previous, (block) => (block.id === id ? { ...block, name } : block))
     );
   }
 
   function updateBlockPercent(id: number, percent: number) {
-    const othersTotal = blocks
-      .filter((b) => b.id !== id)
-      .reduce((sum, b) => sum + b.percent, 0);
-    const maxAllowed = Math.max(0, 100 - othersTotal);
-    const clampedPercent = Math.max(0, Math.min(maxAllowed, percent));
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, percent: clampedPercent } : b))
-    );
+    onBlocksStateChange((previous) => {
+      const othersTotal = previous.blocks
+        .filter((block) => block.id !== id)
+        .reduce((sum, block) => sum + block.percent, 0);
+      const maxAllowed = Math.max(0, 100 - othersTotal);
+      const clampedPercent = Math.max(0, Math.min(maxAllowed, percent));
+
+      return updateBlocks(previous, (block) =>
+        block.id === id ? { ...block, percent: clampedPercent } : block,
+      );
+    });
   }
 
   function applyBlockPercents(updates: { id: number; percent: number }[]) {
     if (updates.length === 0) return;
-    setBlocks((prev) =>
-      prev.map((b) => {
-        const u = updates.find((x) => x.id === b.id);
-        if (u) return { ...b, percent: Math.max(0, Math.min(100, u.percent)) };
-        return b;
-      })
+    onBlocksStateChange((previous) =>
+      updateBlocks(previous, (block) => {
+        const update = updates.find((item) => item.id === block.id);
+        if (update) {
+          return {
+            ...block,
+            percent: Math.max(0, Math.min(100, update.percent)),
+          };
+        }
+
+        return block;
+      }),
     );
   }
 
   function updateBlockColor(id: number, color: string) {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, color } : b))
+    onBlocksStateChange((previous) =>
+      updateBlocks(previous, (block) => (block.id === id ? { ...block, color } : block))
     );
   }
 
   function updateBlockEmoji(id: number, emoji: string) {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, emoji } : b))
+    onBlocksStateChange((previous) =>
+      updateBlocks(previous, (block) => (block.id === id ? { ...block, emoji } : block))
     );
   }
 
   function updateBlockGood(id: number, good: boolean | null) {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, good } : b))
+    onBlocksStateChange((previous) =>
+      updateBlocks(previous, (block) => (block.id === id ? { ...block, good } : block))
     );
   }
 
   function deleteBlock(id: number) {
-    setBlocks((prev) => prev.filter((b) => b.id !== id));
-    setBlockSpent((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setCompletionTones((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
     delete blockElementsRef.current[id];
-    if (activeBlockId === id) {
-      setActiveBlockId(null);
-    }
+    onBlocksStateChange((previous) => {
+      const blockSpent = { ...previous.blockSpent };
+      const completionTones = { ...previous.completionTones };
+
+      delete blockSpent[id];
+      delete completionTones[id];
+
+      return {
+        ...previous,
+        blocks: previous.blocks.filter((block) => block.id !== id),
+        activeBlockId:
+          previous.activeBlockId === id ? null : previous.activeBlockId,
+        blockSpent,
+        completionTones,
+      };
+    });
   }
 
   function resetBlocks() {
-    setBlocks([
-      {
-        id: 1,
-        name: "Idle",
-        color: "bg-gray-500",
-        percent: 25,
-        emoji: "⏲️",
-        good: false,
-      },
-    ]);
-    setNextId(2);
-    setBlockSpent({});
-    setCompletionTones({});
-    setActiveBlockId(null);
+    onBlocksStateChange(createDefaultBlocksState());
   }
 
   return (
@@ -313,7 +334,12 @@ export function BlockManager({
               block={block}
               isActive={activeBlockId === block.id}
               maxPercent={maxPercent}
-              onSelect={() => setActiveBlockId(block.id)}
+              onSelect={() =>
+                onBlocksStateChange((previous) => ({
+                  ...previous,
+                  activeBlockId: block.id,
+                }))
+              }
               onDelete={deleteBlock}
               onNameChange={renameBlock}
               onPercentChange={updateBlockPercent}

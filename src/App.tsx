@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { Schedule } from "./Schedule";
 import { Schedule as BlockSchedule } from "./components/Schedule";
 import { BlockManager } from "./components/BlockManager";
@@ -7,33 +14,54 @@ import {
   type NavigationPage,
 } from "./components/NavigationMenu";
 import {
-  DEFAULT_LOG_OFF_SCHEDULE,
+  createDefaultAppState,
+  type AppState,
+  type BlocksState,
+  type BlockTimerState,
+} from "./appState";
+import {
   resolveNextLogOffDate,
   type LogOffSchedule,
 } from "./logOffSchedule";
 import { Settings } from "./Settings";
 
-function BlocksPage({ targetLogOffAt }: { targetLogOffAt: Date | null }) {
-  const [totalDurationMs, setTotalDurationMs] = useState(0);
-  const [scheduleStarted, setScheduleStarted] = useState(false);
-  const [totalAllocationPercent, setTotalAllocationPercent] = useState(0);
+function applyStateUpdate<T>(current: T, update: SetStateAction<T>) {
+  return typeof update === "function"
+    ? (update as (current: T) => T)(current)
+    : update;
+}
 
-  function handleScheduleStart(durationMs: number) {
-    setTotalDurationMs(durationMs);
-    setScheduleStarted(true);
-  }
+function BlocksPage({
+  blocksState,
+  blockTimerState,
+  onBlocksStateChange,
+  onBlockTimerStateChange,
+  targetLogOffAt,
+}: {
+  blocksState: BlocksState;
+  blockTimerState: BlockTimerState;
+  onBlocksStateChange: Dispatch<SetStateAction<BlocksState>>;
+  onBlockTimerStateChange: Dispatch<SetStateAction<BlockTimerState>>;
+  targetLogOffAt: Date | null;
+}) {
+  const totalAllocationPercent = blocksState.blocks.reduce(
+    (sum, block) => sum + block.percent,
+    0,
+  );
 
   return (
     <section className="flow-root min-h-screen pb-32 pt-8">
       <BlockSchedule
-        onStart={handleScheduleStart}
+        state={blockTimerState}
+        onStateChange={onBlockTimerStateChange}
         totalAllocationPercent={totalAllocationPercent}
         targetLogOffAt={targetLogOffAt}
       />
       <BlockManager
-        totalDurationMs={totalDurationMs}
-        scheduleStarted={scheduleStarted}
-        onTotalAllocatedChange={setTotalAllocationPercent}
+        blocksState={blocksState}
+        onBlocksStateChange={onBlocksStateChange}
+        totalDurationMs={blockTimerState.totalDurationMs}
+        scheduleStarted={blockTimerState.started}
       />
     </section>
   );
@@ -41,15 +69,42 @@ function BlocksPage({ targetLogOffAt }: { targetLogOffAt: Date | null }) {
 
 function App() {
   const [currentPage, setCurrentPage] = useState<NavigationPage>("blocks");
-  const [logOffSchedule, setLogOffSchedule] = useState<LogOffSchedule>(
-    DEFAULT_LOG_OFF_SCHEDULE,
-  );
+  const [appState, setAppState] = useState<AppState>(createDefaultAppState);
   const [resolutionNow, setResolutionNow] = useState(() => new Date());
 
   const targetLogOffAt = useMemo(
-    () => resolveNextLogOffDate(logOffSchedule, resolutionNow),
-    [logOffSchedule, resolutionNow],
+    () => resolveNextLogOffDate(appState.schedule, resolutionNow),
+    [appState.schedule, resolutionNow],
   );
+
+  const setBlocksState = useCallback<Dispatch<SetStateAction<BlocksState>>>(
+    (update) => {
+      setAppState((previous) => ({
+        ...previous,
+        blocks: applyStateUpdate(previous.blocks, update),
+      }));
+    },
+    [],
+  );
+
+  const setBlockTimerState = useCallback<
+    Dispatch<SetStateAction<BlockTimerState>>
+  >(
+    (update) => {
+      setAppState((previous) => ({
+        ...previous,
+        blockTimer: applyStateUpdate(previous.blockTimer, update),
+      }));
+    },
+    [],
+  );
+
+  const setScheduleState = useCallback((schedule: LogOffSchedule) => {
+    setAppState((previous) => ({
+      ...previous,
+      schedule,
+    }));
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setResolutionNow(new Date()), 30 * 1000);
@@ -65,12 +120,18 @@ function App() {
 
       <div className="min-h-screen pl-64 sm:pl-96">
         {currentPage === "blocks" && (
-          <BlocksPage targetLogOffAt={targetLogOffAt} />
+          <BlocksPage
+            blocksState={appState.blocks}
+            blockTimerState={appState.blockTimer}
+            onBlocksStateChange={setBlocksState}
+            onBlockTimerStateChange={setBlockTimerState}
+            targetLogOffAt={targetLogOffAt}
+          />
         )}
         {currentPage === "schedule" && (
           <Schedule
-            logOffSchedule={logOffSchedule}
-            onLogOffScheduleSave={setLogOffSchedule}
+            logOffSchedule={appState.schedule}
+            onLogOffScheduleSave={setScheduleState}
           />
         )}
         {currentPage === "settings" && <Settings />}
