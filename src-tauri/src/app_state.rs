@@ -1,7 +1,13 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::fs;
+use std::io::ErrorKind;
+use std::path::PathBuf;
+
+use tauri::{AppHandle, Manager};
 
 pub const APP_STATE_VERSION: u32 = 1;
+const APP_STATE_FILE_NAME: &str = "app-state.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -99,6 +105,40 @@ pub struct Schedule {
 
 fn app_state_version() -> u32 {
     APP_STATE_VERSION
+}
+
+#[tauri::command]
+pub fn load_app_state(app: AppHandle) -> Result<AppState, String> {
+    let path = app_state_path(&app)?;
+
+    match fs::read_to_string(&path) {
+        Ok(contents) => serde_json::from_str(&contents)
+            .map_err(|error| format!("Failed to parse app state: {error}")),
+        Err(error) if error.kind() == ErrorKind::NotFound => Ok(AppState::default()),
+        Err(error) => Err(format!("Failed to read app state: {error}")),
+    }
+}
+
+#[tauri::command]
+pub fn save_app_state(app: AppHandle, state: AppState) -> Result<(), String> {
+    let path = app_state_path(&app)?;
+
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Failed to create app state directory: {error}"))?;
+    }
+
+    let contents = serde_json::to_string_pretty(&state)
+        .map_err(|error| format!("Failed to serialize app state: {error}"))?;
+
+    fs::write(&path, contents).map_err(|error| format!("Failed to write app state: {error}"))
+}
+
+fn app_state_path(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|directory| directory.join(APP_STATE_FILE_NAME))
+        .map_err(|error| format!("Failed to resolve app state path: {error}"))
 }
 
 fn default_next_block_id() -> u32 {
