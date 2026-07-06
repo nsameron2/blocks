@@ -20,7 +20,14 @@ import {
   set as setDateParts,
   startOfMinute,
 } from "date-fns";
-import { ChevronDown, ChevronUp, Minus, Play, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Minus,
+  Play,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import type { BlockTimerState } from "../appState";
 
 const MINUTE_STEP = 5;
@@ -187,14 +194,30 @@ function QuickOffset({
   );
 }
 
+function AppResetButton({ onReset }: { onReset: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onReset}
+      className="mt-3 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-red-400 hover:text-red-500 sm:absolute sm:left-full sm:top-0 sm:ml-3 sm:mt-0"
+      aria-label="Reset app"
+      title="Reset app"
+    >
+      <Trash2 className="h-5 w-5" />
+    </button>
+  );
+}
+
 export function Schedule({
   state,
   onStateChange,
+  onAppReset,
   totalAllocationPercent,
   targetLogOffAt,
 }: {
   state: BlockTimerState;
   onStateChange: Dispatch<SetStateAction<BlockTimerState>>;
+  onAppReset: () => void;
   totalAllocationPercent: number;
   targetLogOffAt?: Date | null;
 }) {
@@ -274,6 +297,14 @@ export function Schedule({
       totalDurationMs: 0,
       remainingMs: 0,
     });
+  }
+
+  function resetApp() {
+    const current = new Date();
+
+    setNow(current);
+    setClock(defaultClock(current));
+    onAppReset();
   }
 
   function start() {
@@ -379,8 +410,13 @@ export function Schedule({
   return (
     <section className="mx-auto mt-8 w-full max-w-xl px-6 text-white">
       {started ? (
-        <div className="flex h-24 w-full items-center justify-center rounded-md bg-neutral-800 px-6 font-mono text-5xl font-bold tabular-nums tracking-wider text-white sm:text-6xl">
-          {countdown(remaining)}
+        <div className="relative">
+          <div className="flex h-24 w-full items-center justify-center rounded-md bg-neutral-800 px-6 font-mono text-5xl font-bold tabular-nums tracking-wider text-white sm:text-6xl">
+            {countdown(remaining)}
+          </div>
+          <div className="flex justify-end sm:block">
+            <AppResetButton onReset={resetApp} />
+          </div>
         </div>
       ) : (
         <div>
@@ -391,46 +427,51 @@ export function Schedule({
             </p>
           </div>
 
-          <div className="rounded-lg bg-neutral-800/90 p-4 shadow-2xl shadow-black/30 ring-1 ring-white/10">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_58px] items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_72px] sm:gap-4">
-              <TimeField
-                label="hour"
-                value={clock.hour}
-                step={60}
-                onChange={(value) => edit("hour", value)}
-                onShift={shift}
-              />
-              <div className="flex items-center pb-7 font-mono text-3xl font-bold text-neutral-500 sm:text-5xl">
-                :
-              </div>
-              <TimeField
-                label="min"
-                value={clock.minute}
-                step={MINUTE_STEP}
-                onChange={(value) => edit("minute", value)}
-                onShift={shift}
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setClock((prev) => exactClockState(addHours(prev.at, 12)))
-                }
-                className="cursor-pointer rounded-md bg-neutral-700 text-lg font-bold text-white focus:outline-none sm:text-2xl"
-                aria-label={`Switch to ${format(clock.at, "a") === "AM" ? "PM" : "AM"}`}
-              >
-                {format(clock.at, "a")}
-              </button>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {QUICK_OFFSETS.map((offset) => (
-                <QuickOffset
-                  key={offset.label}
-                  {...offset}
-                  canShift={canQuickShift}
-                  onShift={quickShift}
+          <div className="relative">
+            <div className="rounded-lg bg-neutral-800/90 p-4 shadow-2xl shadow-black/30 ring-1 ring-white/10">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_58px] items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_72px] sm:gap-4">
+                <TimeField
+                  label="hour"
+                  value={clock.hour}
+                  step={60}
+                  onChange={(value) => edit("hour", value)}
+                  onShift={shift}
                 />
-              ))}
+                <div className="flex items-center pb-7 font-mono text-3xl font-bold text-neutral-500 sm:text-5xl">
+                  :
+                </div>
+                <TimeField
+                  label="min"
+                  value={clock.minute}
+                  step={MINUTE_STEP}
+                  onChange={(value) => edit("minute", value)}
+                  onShift={shift}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setClock((prev) => exactClockState(addHours(prev.at, 12)))
+                  }
+                  className="cursor-pointer rounded-md bg-neutral-700 text-lg font-bold text-white focus:outline-none sm:text-2xl"
+                  aria-label={`Switch to ${format(clock.at, "a") === "AM" ? "PM" : "AM"}`}
+                >
+                  {format(clock.at, "a")}
+                </button>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {QUICK_OFFSETS.map((offset) => (
+                  <QuickOffset
+                    key={offset.label}
+                    {...offset}
+                    canShift={canQuickShift}
+                    onShift={quickShift}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end sm:block">
+              <AppResetButton onReset={resetApp} />
             </div>
           </div>
 

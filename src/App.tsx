@@ -40,12 +40,14 @@ function BlocksPage({
   blockTimerState,
   onBlocksStateChange,
   onBlockTimerStateChange,
+  onAppReset,
   targetLogOffAt,
 }: {
   blocksState: BlocksState;
   blockTimerState: BlockTimerState;
   onBlocksStateChange: Dispatch<SetStateAction<BlocksState>>;
   onBlockTimerStateChange: Dispatch<SetStateAction<BlockTimerState>>;
+  onAppReset: () => void;
   targetLogOffAt: Date | null;
 }) {
   const totalAllocationPercent = blocksState.blocks.reduce(
@@ -58,6 +60,7 @@ function BlocksPage({
       <BlockSchedule
         state={blockTimerState}
         onStateChange={onBlockTimerStateChange}
+        onAppReset={onAppReset}
         totalAllocationPercent={totalAllocationPercent}
         targetLogOffAt={targetLogOffAt}
       />
@@ -109,6 +112,12 @@ function App() {
       ...previous,
       schedule,
     }));
+  }, []);
+
+  const resetAppState = useCallback(() => {
+    setCurrentPage("blocks");
+    setResolutionNow(new Date());
+    setAppState(createDefaultAppState());
   }, []);
 
   useEffect(() => {
@@ -168,6 +177,7 @@ function App() {
             blockTimerState={appState.blockTimer}
             onBlocksStateChange={setBlocksState}
             onBlockTimerStateChange={setBlockTimerState}
+            onAppReset={resetAppState}
             targetLogOffAt={targetLogOffAt}
           />
         )}
