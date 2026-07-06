@@ -349,13 +349,29 @@ export function Schedule({
   useEffect(() => {
     if (!started) return;
 
-    const timer = setInterval(() => {
+    function updateRemaining() {
       onStateChange((previous) => {
-        const remainingMs = Math.max(0, previous.remainingMs - 1000);
-        if (remainingMs === previous.remainingMs) return previous;
+        const targetAt = dateFromIso(previous.targetAt);
+        const remainingMs = targetAt
+          ? Math.max(0, differenceInMilliseconds(targetAt, new Date()))
+          : Math.max(0, previous.remainingMs - 1000);
+        const nextStarted = remainingMs > 0;
 
-        return { ...previous, remainingMs };
+        if (
+          previous.remainingMs === remainingMs &&
+          previous.started === nextStarted
+        ) {
+          return previous;
+        }
+
+        return { ...previous, started: nextStarted, remainingMs };
       });
+    }
+
+    updateRemaining();
+
+    const timer = setInterval(() => {
+      updateRemaining();
     }, 1000);
     return () => clearInterval(timer);
   }, [onStateChange, started]);

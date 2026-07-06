@@ -160,11 +160,29 @@ function normalizeBlockTimerState(value: unknown): BlockTimerState {
   const record = asRecord(value);
   if (!record) return defaults;
 
+  const targetAt = validIsoDateOrNull(record.targetAt);
+  const savedStarted =
+    typeof record.started === "boolean" ? record.started : false;
+  const totalDurationMs = nonNegativeIntegerOr(record.totalDurationMs, 0);
+
+  if (!targetAt) return defaults;
+
+  if (!savedStarted) {
+    return {
+      targetAt,
+      started: false,
+      totalDurationMs: 0,
+      remainingMs: 0,
+    };
+  }
+
+  const remainingMs = Math.max(0, Date.parse(targetAt) - Date.now());
+
   return {
-    targetAt: validIsoDateOrNull(record.targetAt),
-    started: typeof record.started === "boolean" ? record.started : false,
-    totalDurationMs: nonNegativeIntegerOr(record.totalDurationMs, 0),
-    remainingMs: nonNegativeIntegerOr(record.remainingMs, 0),
+    targetAt,
+    started: remainingMs > 0,
+    totalDurationMs: Math.max(totalDurationMs, remainingMs),
+    remainingMs,
   };
 }
 
