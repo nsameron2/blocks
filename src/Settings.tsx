@@ -234,7 +234,7 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
                         type="button"
                         onClick={() => updateTheme(value)}
                         aria-pressed={isSelected}
-                        className={`inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded px-3 text-sm font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] ${
+                        className={`inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded px-3 text-sm font-bold transition-colors ${
                           isSelected
                             ? "bg-[var(--app-control)] text-[var(--app-control-text)]"
                             : "text-[var(--app-muted)] hover:bg-[var(--app-hover)] hover:text-[var(--app-text)]"
@@ -269,7 +269,7 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
                         type="button"
                         onClick={() => updateTimeFormat(value)}
                         aria-pressed={isSelected}
-                        className={`inline-flex h-10 cursor-pointer items-center justify-center rounded px-3 text-sm font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] ${
+                        className={`inline-flex h-10 cursor-pointer items-center justify-center rounded px-3 text-sm font-bold transition-colors ${
                           isSelected
                             ? "bg-[var(--app-control)] text-[var(--app-control-text)]"
                             : "text-[var(--app-muted)] hover:bg-[var(--app-hover)] hover:text-[var(--app-text)]"
@@ -308,7 +308,7 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
                         setVolumeInput(String(settings.sound.notificationVolume))
                       }
                       aria-label="Notification sound volume percent"
-                      className="h-9 w-full rounded-md bg-[var(--app-surface-2)] py-1 pl-2 pr-6 text-right text-sm font-semibold text-[var(--app-text)] outline-none ring-1 ring-[var(--app-border)] [appearance:textfield] focus:ring-2 focus:ring-[var(--app-focus)] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
+                      className="h-9 w-full rounded-md bg-[var(--app-surface-2)] py-1 pl-2 pr-6 text-right text-sm font-semibold text-[var(--app-text)] outline-none ring-1 ring-[var(--app-border)] [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
                     />
                     <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--app-muted)]">
                       %
@@ -350,7 +350,7 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
                   <button
                     type="button"
                     onClick={() => customSoundInputRef.current?.click()}
-                    className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md bg-[var(--app-secondary-control)] px-3 text-sm font-semibold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)]"
+                    className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md bg-[var(--app-secondary-control)] px-3 text-sm font-semibold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)]"
                   >
                     <Upload className="h-4 w-4" />
                     Upload
