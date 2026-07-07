@@ -46,6 +46,10 @@ pub struct BlocksState {
     pub block_spent: BTreeMap<u32, u64>,
     #[serde(default)]
     pub completion_tones: BTreeMap<u32, CompletionTone>,
+    #[serde(default)]
+    pub presets: Vec<BlockPreset>,
+    #[serde(default = "default_next_preset_id")]
+    pub next_preset_id: u32,
 }
 
 impl Default for BlocksState {
@@ -56,6 +60,8 @@ impl Default for BlocksState {
             active_block_id: None,
             block_spent: BTreeMap::new(),
             completion_tones: BTreeMap::new(),
+            presets: Vec::new(),
+            next_preset_id: default_next_preset_id(),
         }
     }
 }
@@ -69,6 +75,14 @@ pub struct Block {
     pub percent: u8,
     pub emoji: String,
     pub good: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct BlockPreset {
+    pub id: u32,
+    pub name: String,
+    pub blocks: Vec<Block>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -143,6 +157,10 @@ fn app_state_path(app: &AppHandle) -> Result<PathBuf, String> {
 
 fn default_next_block_id() -> u32 {
     2
+}
+
+fn default_next_preset_id() -> u32 {
+    1
 }
 
 fn default_blocks() -> Vec<Block> {

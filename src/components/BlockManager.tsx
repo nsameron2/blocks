@@ -11,7 +11,10 @@ import { ChevronDown, RefreshCw, Save } from "lucide-react";
 import completeBadSound from "../assets/sounds/complete-bad.mp3";
 import completeGoodSound from "../assets/sounds/complete-good.mp3";
 import completeNeutralSound from "../assets/sounds/complete-neutral.mp3";
-import { createDefaultBlocksState, type BlocksState } from "../appState";
+import {
+  createDefaultBlocksState,
+  type BlocksState,
+} from "../appState";
 import type { Block as BlockData, CompletionTone } from "../types";
 import { Block } from "./Block";
 import { Muxer } from "./Muxer";
@@ -21,12 +24,6 @@ const COMPLETION_SOUNDS: Record<CompletionTone, string> = {
   bad: completeBadSound,
   neutral: completeNeutralSound,
 };
-
-interface BlockPreset {
-  id: number;
-  name: string;
-  blocks: BlockData[];
-}
 
 interface BlockManagerProps {
   blocksState: BlocksState;
@@ -61,14 +58,19 @@ export function BlockManager({
   totalDurationMs,
   scheduleStarted,
 }: BlockManagerProps) {
-  const { blocks, activeBlockId, blockSpent, completionTones } = blocksState;
+  const {
+    blocks,
+    activeBlockId,
+    blockSpent,
+    completionTones,
+    presets,
+    nextPresetId,
+  } = blocksState;
   const blocksRef = useRef(blocks);
   const completionTonesRef = useRef(completionTones);
   const completionAudioRef = useRef<Partial<Record<CompletionTone, HTMLAudioElement>>>({});
   const blockElementsRef = useRef<Record<number, HTMLDivElement>>({});
   const presetMenuRef = useRef<HTMLDivElement>(null);
-  const nextPresetIdRef = useRef(1);
-  const [blockPresets, setBlockPresets] = useState<BlockPreset[]>([]);
   const [presetName, setPresetName] = useState("");
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [presetsOpen, setPresetsOpen] = useState(false);
@@ -323,48 +325,56 @@ export function BlockManager({
   }
 
   function resetBlocks() {
-    onBlocksStateChange(createDefaultBlocksState());
+    onBlocksStateChange((previous) => ({
+      ...createDefaultBlocksState(),
+      presets: previous.presets,
+      nextPresetId: previous.nextPresetId,
+    }));
   }
 
   function savePreset() {
     const trimmedName = presetName.trim();
     if (!trimmedName) return;
 
-    const existingPreset = blockPresets.find(
+    const existingPreset = presets.find(
       (preset) => preset.name.toLowerCase() === trimmedName.toLowerCase(),
     );
     const presetBlocks = cloneBlocks(blocks);
 
     if (existingPreset) {
-      setBlockPresets((previous) =>
-        previous.map((preset) =>
+      onBlocksStateChange((previous) => ({
+        ...previous,
+        presets: previous.presets.map((preset) =>
           preset.id === existingPreset.id
             ? { ...preset, name: trimmedName, blocks: presetBlocks }
             : preset,
         ),
-      );
+      }));
       setSelectedPresetId(String(existingPreset.id));
       setPresetName(trimmedName);
       return;
     }
 
-    const id = nextPresetIdRef.current;
-    nextPresetIdRef.current += 1;
-    setBlockPresets((previous) => [
+    const id = nextPresetId;
+    onBlocksStateChange((previous) => ({
       ...previous,
-      {
-        id,
-        name: trimmedName,
-        blocks: presetBlocks,
-      },
-    ]);
+      presets: [
+        ...previous.presets,
+        {
+          id,
+          name: trimmedName,
+          blocks: presetBlocks,
+        },
+      ],
+      nextPresetId: id + 1,
+    }));
     setSelectedPresetId(String(id));
     setPresetName(trimmedName);
   }
 
   function loadPreset(presetId: string) {
     setSelectedPresetId(presetId);
-    const preset = blockPresets.find((item) => String(item.id) === presetId);
+    const preset = presets.find((item) => String(item.id) === presetId);
     if (!preset) return;
 
     const presetBlocks = cloneBlocks(preset.blocks);
@@ -431,12 +441,12 @@ export function BlockManager({
                   </button>
                 </div>
                 <div className="mt-2 max-h-48 overflow-y-auto border-t border-white/10 pt-2">
-                  {blockPresets.length === 0 ? (
+                  {presets.length === 0 ? (
                     <div className="px-2 py-1.5 text-sm text-neutral-500">
                       No presets saved
                     </div>
                   ) : (
-                    blockPresets.map((preset) => (
+                    presets.map((preset) => (
                       <button
                         key={preset.id}
                         type="button"

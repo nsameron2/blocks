@@ -9,6 +9,7 @@ import type { Block, CompletionTone } from "./types";
 export const APP_STATE_VERSION = 1;
 const DEFAULT_BLOCK_ID = 1;
 const DEFAULT_NEXT_BLOCK_ID = 2;
+const DEFAULT_NEXT_PRESET_ID = 1;
 const COMPLETION_TONES: CompletionTone[] = ["good", "bad", "neutral"];
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -26,6 +27,14 @@ export interface BlocksState {
   activeBlockId: number | null;
   blockSpent: Record<number, number>;
   completionTones: Record<number, CompletionTone>;
+  presets: BlockPreset[];
+  nextPresetId: number;
+}
+
+export interface BlockPreset {
+  id: number;
+  name: string;
+  blocks: Block[];
 }
 
 export interface BlockTimerState {
@@ -68,6 +77,8 @@ export function createDefaultBlocksState(): BlocksState {
     activeBlockId: null,
     blockSpent: {},
     completionTones: {},
+    presets: [],
+    nextPresetId: DEFAULT_NEXT_PRESET_ID,
   };
 }
 
@@ -128,6 +139,15 @@ function normalizeBlocksState(value: unknown): BlocksState {
     integerOr(record.nextBlockId, DEFAULT_NEXT_BLOCK_ID),
   );
   const activeBlockId = nullableExistingId(record.activeBlockId, blockIds);
+  const presets = normalizeBlockPresets(record.presets);
+  const maxPresetId = presets.reduce(
+    (maxId, preset) => Math.max(maxId, preset.id),
+    0,
+  );
+  const nextPresetId = Math.max(
+    maxPresetId + 1,
+    integerOr(record.nextPresetId, DEFAULT_NEXT_PRESET_ID),
+  );
 
   return {
     blocks: safeBlocks,
@@ -135,6 +155,8 @@ function normalizeBlocksState(value: unknown): BlocksState {
     activeBlockId,
     blockSpent: normalizeNumberMap(record.blockSpent, blockIds),
     completionTones: normalizeCompletionToneMap(record.completionTones, blockIds),
+    presets,
+    nextPresetId,
   };
 }
 
@@ -152,6 +174,38 @@ function normalizeBlock(value: unknown, fallbackId: number): Block | null {
     percent: clamp(integerOr(record.percent, 0), 0, 100),
     emoji: stringOr(record.emoji, "🆕"),
     good: nullableBoolean(record.good),
+  };
+}
+
+function normalizeBlockPresets(value: unknown): BlockPreset[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((preset, index) => normalizeBlockPreset(preset, index + 1))
+    .filter((preset): preset is BlockPreset => Boolean(preset));
+}
+
+function normalizeBlockPreset(value: unknown, fallbackId: number): BlockPreset | null {
+  const record = asRecord(value);
+  if (!record) return null;
+
+  const id = integerOr(record.id, fallbackId);
+  if (id <= 0) return null;
+
+  const name = stringOr(record.name, "").trim();
+  if (!name) return null;
+
+  const blocks = Array.isArray(record.blocks)
+    ? record.blocks
+        .map((block, index) => normalizeBlock(block, index + 1))
+        .filter((block): block is Block => Boolean(block))
+    : [];
+  if (blocks.length === 0) return null;
+
+  return {
+    id,
+    name,
+    blocks,
   };
 }
 
