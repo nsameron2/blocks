@@ -2,11 +2,12 @@ import {
   useCallback,
   useEffect,
   useRef,
+  useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
 import confetti from "canvas-confetti";
-import { RefreshCw } from "lucide-react";
+import { ChevronDown, RefreshCw, Save } from "lucide-react";
 import completeBadSound from "../assets/sounds/complete-bad.mp3";
 import completeGoodSound from "../assets/sounds/complete-good.mp3";
 import completeNeutralSound from "../assets/sounds/complete-neutral.mp3";
@@ -20,6 +21,12 @@ const COMPLETION_SOUNDS: Record<CompletionTone, string> = {
   bad: completeBadSound,
   neutral: completeNeutralSound,
 };
+
+interface BlockPreset {
+  id: number;
+  name: string;
+  blocks: BlockData[];
+}
 
 interface BlockManagerProps {
   blocksState: BlocksState;
@@ -44,6 +51,10 @@ function updateBlocks(
   };
 }
 
+function cloneBlocks(blocks: BlockData[]): BlockData[] {
+  return blocks.map((block) => ({ ...block }));
+}
+
 export function BlockManager({
   blocksState,
   onBlocksStateChange,
@@ -55,6 +66,12 @@ export function BlockManager({
   const completionTonesRef = useRef(completionTones);
   const completionAudioRef = useRef<Partial<Record<CompletionTone, HTMLAudioElement>>>({});
   const blockElementsRef = useRef<Record<number, HTMLDivElement>>({});
+  const presetMenuRef = useRef<HTMLDivElement>(null);
+  const nextPresetIdRef = useRef(1);
+  const [blockPresets, setBlockPresets] = useState<BlockPreset[]>([]);
+  const [presetName, setPresetName] = useState("");
+  const [selectedPresetId, setSelectedPresetId] = useState("");
+  const [presetsOpen, setPresetsOpen] = useState(false);
   blocksRef.current = blocks;
   completionTonesRef.current = completionTones;
 
@@ -68,6 +85,19 @@ export function BlockManager({
     },
     [],
   );
+
+  useEffect(() => {
+    if (!presetsOpen) return;
+
+    function closePresetMenu(event: MouseEvent) {
+      if (!(event.target instanceof Node)) return;
+      if (presetMenuRef.current?.contains(event.target)) return;
+      setPresetsOpen(false);
+    }
+
+    window.addEventListener("mousedown", closePresetMenu);
+    return () => window.removeEventListener("mousedown", closePresetMenu);
+  }, [presetsOpen]);
 
   function playCompletionSound(tone: CompletionTone) {
     const audio =
@@ -296,6 +326,65 @@ export function BlockManager({
     onBlocksStateChange(createDefaultBlocksState());
   }
 
+  function savePreset() {
+    const trimmedName = presetName.trim();
+    if (!trimmedName) return;
+
+    const existingPreset = blockPresets.find(
+      (preset) => preset.name.toLowerCase() === trimmedName.toLowerCase(),
+    );
+    const presetBlocks = cloneBlocks(blocks);
+
+    if (existingPreset) {
+      setBlockPresets((previous) =>
+        previous.map((preset) =>
+          preset.id === existingPreset.id
+            ? { ...preset, name: trimmedName, blocks: presetBlocks }
+            : preset,
+        ),
+      );
+      setSelectedPresetId(String(existingPreset.id));
+      setPresetName(trimmedName);
+      return;
+    }
+
+    const id = nextPresetIdRef.current;
+    nextPresetIdRef.current += 1;
+    setBlockPresets((previous) => [
+      ...previous,
+      {
+        id,
+        name: trimmedName,
+        blocks: presetBlocks,
+      },
+    ]);
+    setSelectedPresetId(String(id));
+    setPresetName(trimmedName);
+  }
+
+  function loadPreset(presetId: string) {
+    setSelectedPresetId(presetId);
+    const preset = blockPresets.find((item) => String(item.id) === presetId);
+    if (!preset) return;
+
+    const presetBlocks = cloneBlocks(preset.blocks);
+    const maxBlockId = presetBlocks.reduce(
+      (maxId, block) => Math.max(maxId, block.id),
+      0,
+    );
+
+    onBlocksStateChange((previous) => ({
+      ...previous,
+      blocks: presetBlocks,
+      nextBlockId: maxBlockId + 1,
+      activeBlockId: null,
+      blockSpent: {},
+      completionTones: {},
+    }));
+    setPresetName(preset.name);
+    setPresetsOpen(false);
+  }
+
   return (
     <section className="max-w-4xl mx-auto mt-16 px-6">
       <div className="flex justify-between items-center mb-4">
@@ -303,6 +392,69 @@ export function BlockManager({
           Blocks
         </h2>
         <div className="flex items-center gap-3">
+          <div ref={presetMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setPresetsOpen((open) => !open)}
+              className="flex h-8 cursor-pointer items-center gap-2 rounded-md bg-white/10 px-3 text-sm font-semibold text-white ring-1 ring-white/15 hover:bg-white/15"
+              aria-expanded={presetsOpen}
+              aria-haspopup="menu"
+            >
+              Presets
+              <ChevronDown size={16} />
+            </button>
+            {presetsOpen && (
+              <div className="absolute right-0 top-full z-30 mt-2 w-64 rounded-md bg-neutral-900 p-2 shadow-xl ring-1 ring-white/15">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={presetName}
+                    onChange={(event) => setPresetName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        savePreset();
+                      }
+                    }}
+                    placeholder="Preset name"
+                    className="h-8 min-w-0 flex-1 rounded-md bg-neutral-800 px-2 text-sm text-white placeholder:text-neutral-500 outline-none ring-1 ring-white/15 focus:ring-white/40"
+                  />
+                  <button
+                    type="button"
+                    onClick={savePreset}
+                    disabled={!presetName.trim()}
+                    title="Save preset"
+                    aria-label="Save block preset"
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-white hover:text-neutral-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-white"
+                  >
+                    <Save size={18} />
+                  </button>
+                </div>
+                <div className="mt-2 max-h-48 overflow-y-auto border-t border-white/10 pt-2">
+                  {blockPresets.length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-neutral-500">
+                      No presets saved
+                    </div>
+                  ) : (
+                    blockPresets.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => loadPreset(String(preset.id))}
+                        className={`block w-full cursor-pointer rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                          selectedPresetId === String(preset.id)
+                            ? "bg-white/15 text-white"
+                            : "text-neutral-300 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        {preset.name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <button
             onClick={resetBlocks}
             title="Reset blocks"
