@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { ThumbsDown, ThumbsUp, X } from "lucide-react";
+import type { ResolvedTheme } from "../lib/appState";
 import type { Block as BlockType, CompletionTone } from "../lib/types";
 
 const COLOR_OPTIONS = [
@@ -52,6 +53,7 @@ interface BlockProps {
   completionTone: CompletionTone | null;
   remainingMs: number;
   allocatedMs: number;
+  resolvedTheme: ResolvedTheme;
 }
 
 function fmt(ms: number) {
@@ -79,6 +81,7 @@ export function Block({
   completionTone,
   remainingMs,
   allocatedMs,
+  resolvedTheme,
 }: BlockProps) {
   const pct = allocatedMs > 0 ? Math.round((remainingMs / allocatedMs) * 100) : 0;
   const fillPct = Math.max(0, Math.min(100, pct));
@@ -150,13 +153,13 @@ export function Block({
             {editingPercent && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute top-full right-0 mt-2 bg-neutral-800/95 rounded-xl p-3 shadow-xl z-20 flex flex-col items-center gap-2 origin-top animate-[slide-down_0.15s_ease-out]"
+                className="absolute top-full right-0 mt-2 bg-[var(--app-surface)] rounded-xl p-3 shadow-xl shadow-[var(--app-shadow)] ring-1 ring-[var(--app-border)] z-20 flex flex-col items-center gap-2 origin-top animate-[slide-down_0.15s_ease-out]"
               >
-                <span className="text-white text-xs font-bold">{block.percent}%</span>
+                <span className="text-[var(--app-text)] text-xs font-bold">{block.percent}%</span>
                 <div
                   className="relative h-28 w-1 rounded-full"
                   style={{
-                    background: `linear-gradient(to top, ${darkerBlockColor(block.color)} 0%, ${darkerBlockColor(block.color)} ${maxPercent}%, rgb(38 38 38) ${maxPercent}%, rgb(38 38 38) 100%)`,
+                    background: `linear-gradient(to top, ${darkerBlockColor(block.color)} 0%, ${darkerBlockColor(block.color)} ${maxPercent}%, var(--app-disabled) ${maxPercent}%, var(--app-disabled) 100%)`,
                   }}
                 >
                   <input
@@ -194,7 +197,7 @@ export function Block({
             >
               <Picker
                 data={data}
-                theme="dark"
+                theme={resolvedTheme}
                 previewPosition="none"
                 skinTonePosition="none"
                 navPosition="none"
@@ -222,7 +225,7 @@ export function Block({
           {editingColor && (
             <div
               onClick={(e) => e.stopPropagation()}
-              className="absolute top-0 left-0 bg-neutral-800/95 rounded-full shadow-xl z-20 flex flex-col items-center gap-2 p-1.5 origin-top animate-[slide-down_0.15s_ease-out]"
+              className="absolute top-0 left-0 bg-[var(--app-surface)] rounded-full shadow-xl shadow-[var(--app-shadow)] ring-1 ring-[var(--app-border)] z-20 flex flex-col items-center gap-2 p-1.5 origin-top animate-[slide-down_0.15s_ease-out]"
             >
               <button
                 onClick={(e) => {
@@ -232,7 +235,7 @@ export function Block({
                 className="flex items-center justify-center cursor-pointer"
                 aria-label="Close color picker"
               >
-                <div className={`w-4 h-4 rounded-full ${block.color} ring-2 ring-white`} />
+                <div className={`w-4 h-4 rounded-full ${block.color} ring-2 ring-[var(--app-text)]`} />
               </button>
               {COLOR_OPTIONS.filter((c) => c.value !== block.color).map((c) => (
                 <button

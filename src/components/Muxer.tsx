@@ -79,10 +79,10 @@ export function Muxer({ blocks, onApplyPercents }: MuxerProps) {
   }
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-neutral-950/95 backdrop-blur border-t border-neutral-800 px-6 py-4 z-10">
+    <footer className="fixed bottom-0 left-0 right-0 bg-[var(--app-surface)] backdrop-blur border-t border-[var(--app-border)] px-6 py-4 z-10">
       <div className="max-w-6xl mx-auto">
         <div ref={barRef} className="relative w-full h-20 select-none">
-          <div className="absolute inset-0 rounded-md overflow-hidden bg-neutral-800 flex">
+          <div className="absolute inset-0 rounded-md overflow-hidden bg-[var(--app-surface-2)] flex ring-1 ring-[var(--app-border)]">
             {blocks.map((block, i) => (
               <div
                 key={block.id}
@@ -107,7 +107,7 @@ export function Muxer({ blocks, onApplyPercents }: MuxerProps) {
               aria-label="Drag to redistribute"
               role="separator"
             >
-              <div className="w-1.5 h-full bg-black/80 group-hover:bg-black/30 ring-1 ring-black/70 transition-colors" />
+              <div className="w-1.5 h-full bg-[var(--app-muxer-handle)] group-hover:bg-[var(--app-muxer-handle-hover)] ring-1 ring-[var(--app-muxer-handle-ring)] transition-colors" />
             </div>
           ))}
         </div>

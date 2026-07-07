@@ -39,9 +39,9 @@ const QUICK_OFFSETS = [
   { label: "2h", minutes: 120 },
 ];
 const TIME_BUTTON_CLASS =
-  "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-neutral-300 focus:outline-none";
+  "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--app-subtle)] transition-colors hover:bg-[var(--app-hover)] focus:outline-none";
 const QUICK_BUTTON_CLASS =
-  "flex cursor-pointer items-center justify-center focus:outline-none disabled:cursor-not-allowed disabled:opacity-30";
+  "flex cursor-pointer items-center justify-center transition-colors hover:bg-[var(--app-hover)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent";
 
 type ClockPart = "hour" | "minute";
 
@@ -122,7 +122,7 @@ function TimeField({
   onShift: (minutes: number) => void;
 }) {
   return (
-    <div className="flex min-w-0 flex-col items-center rounded-md bg-black/20 px-2 py-2 ring-1 ring-white/10">
+    <div className="flex min-w-0 flex-col items-center rounded-md bg-[var(--app-surface-2)] px-2 py-2 ring-1 ring-[var(--app-border)]">
       <button
         type="button"
         onClick={() => onShift(step)}
@@ -141,7 +141,7 @@ function TimeField({
         onClick={(e) => e.currentTarget.select()}
         onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(-2))}
         aria-label={`Edit ${label}`}
-        className="h-16 w-full min-w-0 cursor-text bg-transparent px-0 text-center font-mono text-4xl font-bold leading-none tabular-nums text-white outline-none sm:text-6xl"
+        className="h-16 w-full min-w-0 cursor-text bg-transparent px-0 text-center font-mono text-4xl font-bold leading-none tabular-nums text-[var(--app-text)] outline-none sm:text-6xl"
       />
       <button
         type="button"
@@ -151,7 +151,7 @@ function TimeField({
       >
         <ChevronDown className="h-5 w-5" />
       </button>
-      <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+      <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--app-muted)]">
         {label}
       </span>
     </div>
@@ -170,7 +170,7 @@ function QuickOffset({
   onShift: (minutes: number) => void;
 }) {
   return (
-    <div className="grid h-10 grid-cols-[32px_1fr_32px] overflow-hidden rounded-md bg-white/5 text-sm font-semibold text-neutral-200">
+    <div className="grid h-10 grid-cols-[32px_1fr_32px] overflow-hidden rounded-md bg-[var(--app-surface-2)] text-sm font-semibold text-[var(--app-subtle)] ring-1 ring-[var(--app-border)]">
       <button
         type="button"
         onClick={() => onShift(-minutes)}
@@ -408,10 +408,10 @@ export function Schedule({
   }, [onStateChange, started]);
 
   return (
-    <section className="mx-auto mt-8 w-full max-w-xl px-6 text-white">
+    <section className="mx-auto mt-8 w-full max-w-xl px-6 text-[var(--app-text)]">
       {started ? (
         <div className="relative">
-          <div className="flex h-24 w-full items-center justify-center rounded-md bg-neutral-800 px-6 font-mono text-5xl font-bold tabular-nums tracking-wider text-white sm:text-6xl">
+          <div className="flex h-24 w-full items-center justify-center rounded-md bg-[var(--app-surface)] px-6 font-mono text-5xl font-bold tabular-nums tracking-wider text-[var(--app-text)] ring-1 ring-[var(--app-border)] sm:text-6xl">
             {countdown(remaining)}
           </div>
           <div className="flex justify-end sm:block">
@@ -422,13 +422,13 @@ export function Schedule({
         <div>
           <div className="mb-3">
             <h2 className="text-xl font-semibold">Set log off time:</h2>
-            <p className="mt-1 text-sm font-medium text-neutral-400">
+            <p className="mt-1 text-sm font-medium text-[var(--app-muted)]">
               {targetLabel(targetAt, now)}
             </p>
           </div>
 
           <div className="relative">
-            <div className="rounded-lg bg-neutral-800/90 p-4 shadow-2xl shadow-black/30 ring-1 ring-white/10">
+            <div className="rounded-lg bg-[var(--app-surface)] p-4 shadow-2xl shadow-[var(--app-shadow)] ring-1 ring-[var(--app-border)]">
               <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_58px] items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_72px] sm:gap-4">
                 <TimeField
                   label="hour"
@@ -437,7 +437,7 @@ export function Schedule({
                   onChange={(value) => edit("hour", value)}
                   onShift={shift}
                 />
-                <div className="flex items-center pb-7 font-mono text-3xl font-bold text-neutral-500 sm:text-5xl">
+                <div className="flex items-center pb-7 font-mono text-3xl font-bold text-[var(--app-muted)] sm:text-5xl">
                   :
                 </div>
                 <TimeField
@@ -452,7 +452,7 @@ export function Schedule({
                   onClick={() =>
                     setClock((prev) => exactClockState(addHours(prev.at, 12)))
                   }
-                  className="cursor-pointer rounded-md bg-neutral-700 text-lg font-bold text-white focus:outline-none sm:text-2xl"
+                  className="cursor-pointer rounded-md bg-[var(--app-secondary-control)] text-lg font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] sm:text-2xl"
                   aria-label={`Switch to ${format(clock.at, "a") === "AM" ? "PM" : "AM"}`}
                 >
                   {format(clock.at, "a")}
@@ -479,7 +479,7 @@ export function Schedule({
             <button
               type="button"
               onClick={reset}
-              className="inline-flex h-10 w-28 cursor-pointer items-center justify-center rounded-md bg-neutral-800 text-sm font-semibold text-neutral-300 transition-colors hover:bg-neutral-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-neutral-500"
+              className="inline-flex h-10 w-28 cursor-pointer items-center justify-center rounded-md bg-[var(--app-secondary-control)] text-sm font-semibold text-[var(--app-subtle)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)] hover:text-[var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)]"
             >
               Reset
             </button>
@@ -487,7 +487,7 @@ export function Schedule({
               type="button"
               onClick={start}
               disabled={!allocationComplete}
-              className="inline-flex h-10 w-28 cursor-pointer items-center justify-center gap-2 rounded-md bg-white text-sm font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 disabled:hover:bg-neutral-700 disabled:focus:ring-neutral-600"
+              className="inline-flex h-10 w-28 cursor-pointer items-center justify-center gap-2 rounded-md bg-[var(--app-control)] text-sm font-bold text-[var(--app-control-text)] transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] disabled:cursor-not-allowed disabled:bg-[var(--app-disabled)] disabled:text-[var(--app-disabled-text)] disabled:hover:bg-[var(--app-disabled)] disabled:hover:opacity-100 disabled:focus:ring-[var(--app-focus)]"
             >
               <Play className="h-4 w-4 fill-current" />
               Start

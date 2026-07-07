@@ -14,6 +14,7 @@ import completeNeutralSound from "../assets/sounds/complete-neutral.mp3";
 import {
   createDefaultBlocksState,
   type BlocksState,
+  type ResolvedTheme,
 } from "../lib/appState";
 import { sendBlockCompletionNotification } from "../lib/notifications";
 import type { Block as BlockData, CompletionTone } from "../lib/types";
@@ -31,6 +32,7 @@ interface BlockManagerProps {
   onBlocksStateChange: Dispatch<SetStateAction<BlocksState>>;
   totalDurationMs: number;
   scheduleStarted: boolean;
+  resolvedTheme: ResolvedTheme;
 }
 
 function completionToneForBlock(block: BlockData): CompletionTone {
@@ -58,6 +60,7 @@ export function BlockManager({
   onBlocksStateChange,
   totalDurationMs,
   scheduleStarted,
+  resolvedTheme,
 }: BlockManagerProps) {
   const {
     blocks,
@@ -402,7 +405,7 @@ export function BlockManager({
   return (
     <section className="max-w-4xl mx-auto mt-16 px-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-white text-xl font-semibold">
+        <h2 className="text-[var(--app-text)] text-xl font-semibold">
           Blocks
         </h2>
         <div className="flex items-center gap-3">
@@ -410,7 +413,7 @@ export function BlockManager({
             <button
               type="button"
               onClick={() => setPresetsOpen((open) => !open)}
-              className="flex h-8 cursor-pointer items-center gap-2 rounded-md bg-white/10 px-3 text-sm font-semibold text-white ring-1 ring-white/15 hover:bg-white/15"
+              className="flex h-8 cursor-pointer items-center gap-2 rounded-md bg-[var(--app-surface)] px-3 text-sm font-semibold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)]"
               aria-expanded={presetsOpen}
               aria-haspopup="menu"
             >
@@ -418,7 +421,7 @@ export function BlockManager({
               <ChevronDown size={16} />
             </button>
             {presetsOpen && (
-              <div className="absolute right-0 top-full z-30 mt-2 w-64 rounded-md bg-neutral-900 p-2 shadow-xl ring-1 ring-white/15">
+              <div className="absolute right-0 top-full z-30 mt-2 w-64 rounded-md bg-[var(--app-surface)] p-2 shadow-xl shadow-[var(--app-shadow)] ring-1 ring-[var(--app-border)]">
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -431,7 +434,7 @@ export function BlockManager({
                       }
                     }}
                     placeholder="Preset name"
-                    className="h-8 min-w-0 flex-1 rounded-md bg-neutral-800 px-2 text-sm text-white placeholder:text-neutral-500 outline-none ring-1 ring-white/15 focus:ring-white/40"
+                    className="h-8 min-w-0 flex-1 rounded-md bg-[var(--app-surface-2)] px-2 text-sm text-[var(--app-text)] placeholder:text-[var(--app-muted)] outline-none ring-1 ring-[var(--app-border)] focus:ring-[var(--app-focus)]"
                   />
                   <button
                     type="button"
@@ -439,14 +442,14 @@ export function BlockManager({
                     disabled={!presetName.trim()}
                     title="Save preset"
                     aria-label="Save block preset"
-                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-white hover:text-neutral-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-white"
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[var(--app-text)] transition-colors hover:bg-[var(--app-hover)] hover:text-[var(--app-subtle)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--app-text)]"
                   >
                     <Save size={18} />
                   </button>
                 </div>
-                <div className="mt-2 max-h-48 overflow-y-auto border-t border-white/10 pt-2">
+                <div className="mt-2 max-h-48 overflow-y-auto border-t border-[var(--app-border)] pt-2">
                   {presets.length === 0 ? (
-                    <div className="px-2 py-1.5 text-sm text-neutral-500">
+                    <div className="px-2 py-1.5 text-sm text-[var(--app-muted)]">
                       No presets saved
                     </div>
                   ) : (
@@ -457,8 +460,8 @@ export function BlockManager({
                         onClick={() => loadPreset(String(preset.id))}
                         className={`block w-full cursor-pointer rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
                           selectedPresetId === String(preset.id)
-                            ? "bg-white/15 text-white"
-                            : "text-neutral-300 hover:bg-white/10 hover:text-white"
+                            ? "bg-[var(--app-hover)] text-[var(--app-text)]"
+                            : "text-[var(--app-subtle)] hover:bg-[var(--app-hover)] hover:text-[var(--app-text)]"
                         }`}
                       >
                         {preset.name}
@@ -472,14 +475,14 @@ export function BlockManager({
           <button
             onClick={resetBlocks}
             title="Reset blocks"
-            className="text-white hover:text-neutral-300 cursor-pointer"
+            className="text-[var(--app-text)] hover:text-[var(--app-subtle)] cursor-pointer transition-colors"
           >
             <RefreshCw size={20} />
           </button>
           <button
             onClick={addEmptyBlock}
             title={"Add block"}
-            className="text-white text-2xl hover:text-neutral-300 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-white"
+            className="text-[var(--app-text)] text-2xl hover:text-[var(--app-subtle)] cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[var(--app-text)]"
           >
             +
           </button>
@@ -516,6 +519,7 @@ export function BlockManager({
               completionTone={completionTones[block.id] ?? null}
               remainingMs={remainingMs}
               allocatedMs={allocatedMs}
+              resolvedTheme={resolvedTheme}
             />
           );
         })}

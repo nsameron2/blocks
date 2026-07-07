@@ -65,6 +65,7 @@ function BlocksPage({
   onBlockTimerStateChange,
   onAppReset,
   targetLogOffAt,
+  resolvedTheme,
 }: {
   blocksState: BlocksState;
   blockTimerState: BlockTimerState;
@@ -72,6 +73,7 @@ function BlocksPage({
   onBlockTimerStateChange: Dispatch<SetStateAction<BlockTimerState>>;
   onAppReset: () => void;
   targetLogOffAt: Date | null;
+  resolvedTheme: ResolvedTheme;
 }) {
   const totalAllocationPercent = blocksState.blocks.reduce(
     (sum, block) => sum + block.percent,
@@ -92,6 +94,7 @@ function BlocksPage({
         onBlocksStateChange={onBlocksStateChange}
         totalDurationMs={blockTimerState.totalDurationMs}
         scheduleStarted={blockTimerState.started}
+        resolvedTheme={resolvedTheme}
       />
     </section>
   );
@@ -237,6 +240,7 @@ function App() {
             onBlockTimerStateChange={setBlockTimerState}
             onAppReset={resetAppState}
             targetLogOffAt={targetLogOffAt}
+            resolvedTheme={resolvedTheme}
           />
         )}
         {currentPage === "schedule" && (

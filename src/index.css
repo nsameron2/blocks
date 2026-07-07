@@ -11,11 +11,18 @@
   --app-hover: rgb(255 255 255 / 0.08);
   --app-control: rgb(255 255 255);
   --app-control-text: rgb(10 10 10);
+  --app-secondary-control: rgb(38 38 38);
+  --app-secondary-control-hover: rgb(64 64 64);
   --app-focus: rgb(255 255 255 / 0.7);
   --app-disabled: rgb(64 64 64);
   --app-disabled-text: rgb(163 163 163);
+  --app-shadow: rgb(0 0 0 / 0.3);
+  --app-muxer-handle: rgb(0 0 0 / 0.8);
+  --app-muxer-handle-hover: rgb(0 0 0 / 0.3);
+  --app-muxer-handle-ring: rgb(0 0 0 / 0.7);
   --app-date-overridden: rgb(82 82 82);
   --app-today-ring: rgb(245 245 245 / 0.6);
+  --app-slider-thumb-border: rgb(255 255 255);
 }
 
 :root[data-theme="light"] {
@@ -29,11 +36,18 @@
   --app-hover: rgb(23 23 23 / 0.06);
   --app-control: rgb(23 23 23);
   --app-control-text: rgb(255 255 255);
+  --app-secondary-control: rgb(255 255 255);
+  --app-secondary-control-hover: rgb(229 229 229);
   --app-focus: rgb(23 23 23 / 0.35);
   --app-disabled: rgb(229 229 229);
   --app-disabled-text: rgb(115 115 115);
+  --app-shadow: rgb(0 0 0 / 0.12);
+  --app-muxer-handle: rgb(23 23 23 / 0.7);
+  --app-muxer-handle-hover: rgb(23 23 23 / 0.28);
+  --app-muxer-handle-ring: rgb(23 23 23 / 0.45);
   --app-date-overridden: rgb(212 212 212);
   --app-today-ring: rgb(23 23 23 / 0.35);
+  --app-slider-thumb-border: rgb(23 23 23);
 }
 
 html,
@@ -74,7 +88,8 @@ body,
   height: 14px;
   background: white;
   border-radius: 9999px;
-  border: none;
+  border: 1px solid var(--app-slider-thumb-border);
+  box-sizing: border-box;
   cursor: pointer;
 }
 .slider-clamped::-moz-range-track {
@@ -84,7 +99,8 @@ body,
   width: 14px;
   height: 14px;
   background: white;
-  border: none;
+  border: 1px solid var(--app-slider-thumb-border);
+  box-sizing: border-box;
   border-radius: 9999px;
   cursor: pointer;
 }
