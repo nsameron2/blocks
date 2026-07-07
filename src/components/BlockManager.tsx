@@ -15,6 +15,7 @@ import {
   createDefaultBlocksState,
   type BlocksState,
 } from "../appState";
+import { sendBlockCompletionNotification } from "../notifications";
 import type { Block as BlockData, CompletionTone } from "../types";
 import { Block } from "./Block";
 import { Muxer } from "./Muxer";
@@ -202,6 +203,9 @@ export function BlockManager({
         nextCompletionTones[block.id] = tone;
         changed = true;
         playCompletionSound(tone);
+        void sendBlockCompletionNotification(block, tone).catch((error) => {
+          console.error("Failed to send block completion notification", error);
+        });
         if (tone === "good") {
           fireGoodCompletionConfetti(block.id);
         }
