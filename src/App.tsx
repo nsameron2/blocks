@@ -24,6 +24,7 @@ import {
   type CompletionSoundSettings,
   type CustomSound,
   type ResolvedTheme,
+  type TimeFormatPreference,
   type ThemePreference,
 } from "./lib/appState";
 import {
@@ -68,6 +69,7 @@ function BlocksPage({
   onAppReset,
   targetLogOffAt,
   resolvedTheme,
+  timeFormat,
   notificationVolume,
   completionSounds,
   customSounds,
@@ -79,6 +81,7 @@ function BlocksPage({
   onAppReset: () => void;
   targetLogOffAt: Date | null;
   resolvedTheme: ResolvedTheme;
+  timeFormat: TimeFormatPreference;
   notificationVolume: number;
   completionSounds: CompletionSoundSettings;
   customSounds: CustomSound[];
@@ -96,6 +99,7 @@ function BlocksPage({
         onAppReset={onAppReset}
         totalAllocationPercent={totalAllocationPercent}
         targetLogOffAt={targetLogOffAt}
+        timeFormat={timeFormat}
       />
       <BlockManager
         blocksState={blocksState}
@@ -252,6 +256,7 @@ function App() {
             onAppReset={resetAppState}
             targetLogOffAt={targetLogOffAt}
             resolvedTheme={resolvedTheme}
+            timeFormat={appState.settings.time.timeFormat}
             notificationVolume={appState.settings.sound.notificationVolume}
             completionSounds={appState.settings.sound.completionSounds}
             customSounds={appState.settings.sound.customSounds}
@@ -261,6 +266,7 @@ function App() {
           <Schedule
             logOffSchedule={appState.schedule}
             onLogOffScheduleSave={setScheduleState}
+            timeFormat={appState.settings.time.timeFormat}
           />
         )}
         {currentPage === "settings" && (

@@ -15,6 +15,7 @@ import {
   type LogOffSchedule,
   type Weekday,
 } from "./lib/logOffSchedule";
+import type { TimeFormatPreference } from "./lib/appState";
 
 const WEEKDAYS: { label: string; value: Weekday }[] = [
   { label: "Monday", value: 1 },
@@ -52,11 +53,13 @@ function dateFromKey(dateKey: string) {
 interface ScheduleProps {
   logOffSchedule: LogOffSchedule;
   onLogOffScheduleSave: (schedule: LogOffSchedule) => void;
+  timeFormat: TimeFormatPreference;
 }
 
 export function Schedule({
   logOffSchedule,
   onLogOffScheduleSave,
+  timeFormat,
 }: ScheduleProps) {
   const [draftDefaultTime, setDraftDefaultTime] = useState(
     logOffSchedule.defaultTime,
@@ -159,6 +162,7 @@ export function Schedule({
   const selectedDateLabel = selectedDate
     ? format(selectedDate, "MMMM d, yyyy")
     : "Select a date";
+  const timeInputLang = timeFormat === "12h" ? "en-US" : "en-GB";
   const overriddenDates = Object.keys(logOffSchedule.dateOverrides)
     .map(dateFromKey)
     .filter((date): date is Date => Boolean(date));
@@ -190,6 +194,7 @@ export function Schedule({
                   <input
                     id="global-log-off-time"
                     type="time"
+                    lang={timeInputLang}
                     value={draftDefaultTime}
                     onChange={(event) => setDraftDefaultTime(event.target.value)}
                     className="h-12 min-w-0 flex-1 rounded-md bg-[var(--app-surface-2)] px-3 font-mono text-xl font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] sm:w-44 sm:flex-none"
@@ -228,6 +233,7 @@ export function Schedule({
                     <input
                       id={`weekday-log-off-time-${weekday.value}`}
                       type="time"
+                      lang={timeInputLang}
                       value={draftWeekdayTimes[weekday.value] ?? ""}
                       onChange={(event) =>
                         updateWeekdayTime(weekday.value, event.target.value)
@@ -292,6 +298,7 @@ export function Schedule({
                 <input
                   id="date-log-off-time"
                   type="time"
+                  lang={timeInputLang}
                   value={draftDateOverrideTime}
                   min={dateOverrideMinTime}
                   disabled={dateOverrideInputDisabled}

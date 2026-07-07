@@ -11,6 +11,7 @@ import type {
   CompletionSound,
   CustomCompletionSound,
   CustomSound,
+  TimeFormatPreference,
   ThemePreference,
 } from "./lib/appState";
 import { completionSoundSource } from "./lib/completionSounds";
@@ -36,6 +37,11 @@ const COMPLETION_SOUND_ROWS: { tone: CompletionTone; label: string }[] = [
   { tone: "good", label: "Good" },
   { tone: "bad", label: "Bad" },
   { tone: "neutral", label: "Neutral" },
+];
+
+const TIME_FORMAT_OPTIONS: { value: TimeFormatPreference; label: string }[] = [
+  { value: "12h", label: "12 hour" },
+  { value: "24h", label: "24 hour" },
 ];
 
 function createCustomSoundId(): CustomCompletionSound {
@@ -106,6 +112,16 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
       appearance: {
         ...previous.appearance,
         theme,
+      },
+    }));
+  }
+
+  function updateTimeFormat(timeFormat: TimeFormatPreference) {
+    onSettingsChange((previous) => ({
+      ...previous,
+      time: {
+        ...previous.time,
+        timeFormat,
       },
     }));
   }
@@ -225,6 +241,40 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
                         }`}
                       >
                         <Icon className="h-4 w-4" />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-[var(--app-subtle)]">
+              Time
+            </h2>
+            <div className="mt-3 overflow-hidden rounded-md bg-[var(--app-surface)] ring-1 ring-[var(--app-border)]">
+              <div className="flex min-h-20 flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-base font-semibold text-[var(--app-subtle)] sm:text-lg">
+                  Time format
+                </div>
+                <div className="inline-flex rounded-md bg-[var(--app-surface-2)] p-1 ring-1 ring-[var(--app-border)]">
+                  {TIME_FORMAT_OPTIONS.map(({ value, label }) => {
+                    const isSelected = settings.time.timeFormat === value;
+
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => updateTimeFormat(value)}
+                        aria-pressed={isSelected}
+                        className={`inline-flex h-10 cursor-pointer items-center justify-center rounded px-3 text-sm font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] ${
+                          isSelected
+                            ? "bg-[var(--app-control)] text-[var(--app-control-text)]"
+                            : "text-[var(--app-muted)] hover:bg-[var(--app-hover)] hover:text-[var(--app-text)]"
+                        }`}
+                      >
                         {label}
                       </button>
                     );

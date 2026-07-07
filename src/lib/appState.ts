@@ -25,17 +25,23 @@ export interface AppState {
 
 export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
+export type TimeFormatPreference = "12h" | "24h";
 export type CustomCompletionSound = `${typeof CUSTOM_SOUND_ID_PREFIX}${string}`;
 export type CompletionSound = CompletionTone | CustomCompletionSound;
 export type CompletionSoundSettings = Record<CompletionTone, CompletionSound>;
 
 export interface AppSettings {
   appearance: AppearanceSettings;
+  time: TimeSettings;
   sound: SoundSettings;
 }
 
 export interface AppearanceSettings {
   theme: ThemePreference;
+}
+
+export interface TimeSettings {
+  timeFormat: TimeFormatPreference;
 }
 
 export interface SoundSettings {
@@ -133,6 +139,9 @@ export function createDefaultSettings(): AppSettings {
   return {
     appearance: {
       theme: "system",
+    },
+    time: {
+      timeFormat: "12h",
     },
     sound: {
       notificationVolume: 100,
@@ -307,6 +316,7 @@ function normalizeSettings(value: unknown): AppSettings {
 
   return {
     appearance: normalizeAppearanceSettings(record.appearance),
+    time: normalizeTimeSettings(record.time),
     sound: normalizeSoundSettings(record.sound),
   };
 }
@@ -318,6 +328,16 @@ function normalizeAppearanceSettings(value: unknown): AppearanceSettings {
 
   return {
     theme: themePreferenceOr(record.theme, defaults.theme),
+  };
+}
+
+function normalizeTimeSettings(value: unknown): TimeSettings {
+  const defaults = createDefaultSettings().time;
+  const record = asRecord(value);
+  if (!record) return defaults;
+
+  return {
+    timeFormat: timeFormatPreferenceOr(record.timeFormat, defaults.timeFormat),
   };
 }
 
@@ -504,6 +524,13 @@ function themePreferenceOr(
   return value === "system" || value === "light" || value === "dark"
     ? value
     : fallback;
+}
+
+function timeFormatPreferenceOr(
+  value: unknown,
+  fallback: TimeFormatPreference,
+): TimeFormatPreference {
+  return value === "12h" || value === "24h" ? value : fallback;
 }
 
 function completionSoundOr(

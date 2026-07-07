@@ -126,6 +126,8 @@ pub struct AppSettings {
     #[serde(default)]
     pub appearance: AppearanceSettings,
     #[serde(default)]
+    pub time: TimeSettings,
+    #[serde(default)]
     pub sound: SoundSettings,
 }
 
@@ -140,6 +142,21 @@ impl Default for AppearanceSettings {
     fn default() -> Self {
         Self {
             theme: ThemePreference::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct TimeSettings {
+    #[serde(default)]
+    pub time_format: TimeFormatPreference,
+}
+
+impl Default for TimeSettings {
+    fn default() -> Self {
+        Self {
+            time_format: TimeFormatPreference::default(),
         }
     }
 }
@@ -205,6 +222,20 @@ pub enum ThemePreference {
 impl Default for ThemePreference {
     fn default() -> Self {
         Self::System
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum TimeFormatPreference {
+    #[serde(rename = "12h")]
+    TwelveHour,
+    #[serde(rename = "24h")]
+    TwentyFourHour,
+}
+
+impl Default for TimeFormatPreference {
+    fn default() -> Self {
+        Self::TwelveHour
     }
 }
 

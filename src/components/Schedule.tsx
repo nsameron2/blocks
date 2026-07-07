@@ -28,7 +28,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import type { BlockTimerState } from "../lib/appState";
+import type { BlockTimerState, TimeFormatPreference } from "../lib/appState";
 
 const MINUTE_STEP = 5;
 const DEFAULT_OFFSET_MINUTES = 90;
@@ -51,7 +51,19 @@ interface ClockState {
   minute: string;
 }
 
-function clockState(clockTime: Date, from = new Date()) {
+function clockHourFormat(timeFormat: TimeFormatPreference) {
+  return timeFormat === "24h" ? "HH" : "hh";
+}
+
+function clockTimeLabel(date: Date, timeFormat: TimeFormatPreference) {
+  return format(date, timeFormat === "24h" ? "HH:mm" : "h:mm a");
+}
+
+function clockState(
+  clockTime: Date,
+  from: Date,
+  timeFormat: TimeFormatPreference,
+) {
   const today = setDateParts(startOfMinute(from), {
     hours: getHours(clockTime),
     minutes: getMinutes(clockTime),
@@ -60,26 +72,39 @@ function clockState(clockTime: Date, from = new Date()) {
   });
   const at = today > from ? today : addDays(today, 1);
 
-  return { at, hour: format(at, "hh"), minute: format(at, "mm") };
+  return { at, hour: format(at, clockHourFormat(timeFormat)), minute: format(at, "mm") };
 }
 
-function exactClockState(targetAt: Date) {
+function exactClockState(
+  targetAt: Date,
+  timeFormat: TimeFormatPreference,
+) {
   const at = startOfMinute(targetAt);
 
-  return { at, hour: format(at, "hh"), minute: format(at, "mm") };
+  return { at, hour: format(at, clockHourFormat(timeFormat)), minute: format(at, "mm") };
 }
 
-function clockStateFromTarget(targetAt: Date, from = new Date()) {
-  return targetAt > from ? exactClockState(targetAt) : clockState(targetAt, from);
+function clockStateFromTarget(
+  targetAt: Date,
+  from: Date,
+  timeFormat: TimeFormatPreference,
+) {
+  return targetAt > from
+    ? exactClockState(targetAt, timeFormat)
+    : clockState(targetAt, from, timeFormat);
 }
 
-function defaultClock(from = new Date()) {
+function defaultClock(
+  from: Date,
+  timeFormat: TimeFormatPreference,
+) {
   return clockState(
     roundToNearestMinutes(addMinutes(from, DEFAULT_OFFSET_MINUTES), {
       nearestTo: MINUTE_STEP,
       roundingMethod: "ceil",
     }),
     from,
+    timeFormat,
   );
 }
 
@@ -98,14 +123,20 @@ function countdown(ms: number) {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function targetLabel(targetAt: Date, now: Date) {
+function targetLabel(
+  targetAt: Date,
+  now: Date,
+  timeFormat: TimeFormatPreference,
+) {
   const day = differenceInCalendarDays(targetAt, now);
   const dayLabel = day === 0 ? "Today" : day === 1 ? "Tomorrow" : format(targetAt, "MMM d");
   const distance = formatDuration(intervalToDuration({ start: now, end: targetAt }), {
     format: ["hours", "minutes"],
   });
 
-  return `${dayLabel} | ${distance || "less than a minute"}`;
+  return `${dayLabel} at ${clockTimeLabel(targetAt, timeFormat)} | ${
+    distance || "less than a minute"
+  }`;
 }
 
 function TimeField({
@@ -214,53 +245,68 @@ export function Schedule({
   onAppReset,
   totalAllocationPercent,
   targetLogOffAt,
+  timeFormat,
 }: {
   state: BlockTimerState;
   onStateChange: Dispatch<SetStateAction<BlockTimerState>>;
   onAppReset: () => void;
   totalAllocationPercent: number;
   targetLogOffAt?: Date | null;
+  timeFormat: TimeFormatPreference;
 }) {
   const targetLogOffAtMs = targetLogOffAt?.getTime() ?? null;
   const stateTargetAt = dateFromIso(state.targetAt);
   const stateTargetAtMs = stateTargetAt?.getTime() ?? null;
   const previousTargetLogOffAtMsRef = useRef<number | null>(targetLogOffAtMs);
   const [clock, setClock] = useState<ClockState>(() => {
-    if (stateTargetAt) return clockStateFromTarget(stateTargetAt);
-    return targetLogOffAt ? exactClockState(targetLogOffAt) : defaultClock();
+    if (stateTargetAt) return clockStateFromTarget(stateTargetAt, new Date(), timeFormat);
+    return targetLogOffAt
+      ? exactClockState(targetLogOffAt, timeFormat)
+      : defaultClock(new Date(), timeFormat);
   });
   const [now, setNow] = useState(() => new Date());
   const started = state.started;
   const remaining = state.remainingMs;
 
   const allocationComplete = totalAllocationPercent === 100;
-  const targetAt = clock.at > now ? clock.at : clockState(clock.at, now).at;
+  const targetAt =
+    clock.at > now ? clock.at : clockState(clock.at, now, timeFormat).at;
   const targetAtIso = targetAt.toISOString();
 
   function shift(minutes: number) {
     setClock((prev) => {
       const current = new Date();
       const currentTarget =
-        prev.at > current ? prev.at : clockState(prev.at, current).at;
+        prev.at > current ? prev.at : clockState(prev.at, current, timeFormat).at;
 
-      return exactClockState(addMinutes(currentTarget, minutes));
+      return exactClockState(addMinutes(currentTarget, minutes), timeFormat);
     });
   }
 
   function edit(part: ClockPart, text: string) {
     setClock((prev) => {
-      if (!text || (part === "hour" && text === "0")) return { ...prev, [part]: text };
+      if (!text || (timeFormat === "12h" && part === "hour" && text === "0")) {
+        return { ...prev, [part]: text };
+      }
 
       const isHour = part === "hour";
       const raw = Number(text);
-      const value = Math.min(isHour ? 12 : 59, Math.max(isHour ? 1 : 0, raw));
+      const max = isHour ? (timeFormat === "24h" ? 23 : 12) : 59;
+      const min = isHour && timeFormat === "12h" ? 1 : 0;
+      const value = Math.min(max, Math.max(min, raw));
       const at = setDateParts(
         prev.at,
         isHour
-          ? { hours: (value % 12) + (format(prev.at, "a") === "PM" ? 12 : 0) }
+          ? {
+              hours:
+                timeFormat === "24h"
+                  ? value
+                  : (value % 12) + (format(prev.at, "a") === "PM" ? 12 : 0),
+            }
           : { minutes: value },
       );
-      const next = at > new Date() ? exactClockState(at) : clockState(at);
+      const next =
+        at > new Date() ? exactClockState(at, timeFormat) : clockState(at, new Date(), timeFormat);
 
       return raw === value ? { ...next, [part]: text } : next;
     });
@@ -277,17 +323,17 @@ export function Schedule({
     setNow(current);
     setClock((prev) => {
       const currentTarget =
-        prev.at > current ? prev.at : clockState(prev.at, current).at;
+        prev.at > current ? prev.at : clockState(prev.at, current, timeFormat).at;
       const shifted = addMinutes(currentTarget, minutes);
       return shifted > current
-        ? exactClockState(shifted)
+        ? exactClockState(shifted, timeFormat)
         : prev;
     });
   }
 
   function reset() {
     const current = new Date();
-    const nextClock = defaultClock(current);
+    const nextClock = defaultClock(current, timeFormat);
 
     setNow(current);
     setClock(nextClock);
@@ -303,7 +349,7 @@ export function Schedule({
     const current = new Date();
 
     setNow(current);
-    setClock(defaultClock(current));
+    setClock(defaultClock(current, timeFormat));
     onAppReset();
   }
 
@@ -312,7 +358,7 @@ export function Schedule({
 
     const current = new Date();
     const scheduledAt =
-      clock.at > current ? clock.at : clockState(clock.at, current).at;
+      clock.at > current ? clock.at : clockState(clock.at, current, timeFormat).at;
     const durationMs = differenceInMilliseconds(scheduledAt, current);
 
     onStateChange({
@@ -324,13 +370,17 @@ export function Schedule({
   }
 
   useEffect(() => {
+    setClock((previous) => exactClockState(previous.at, timeFormat));
+  }, [timeFormat]);
+
+  useEffect(() => {
     if (started || stateTargetAtMs === null) return;
 
     const current = new Date();
 
     setNow(current);
-    setClock(clockStateFromTarget(new Date(stateTargetAtMs), current));
-  }, [started, stateTargetAtMs]);
+    setClock(clockStateFromTarget(new Date(stateTargetAtMs), current, timeFormat));
+  }, [started, stateTargetAtMs, timeFormat]);
 
   useEffect(() => {
     if (started || targetLogOffAtMs === null) return;
@@ -423,13 +473,19 @@ export function Schedule({
           <div className="mb-3">
             <h2 className="text-xl font-semibold">Set log off time:</h2>
             <p className="mt-1 text-sm font-medium text-[var(--app-muted)]">
-              {targetLabel(targetAt, now)}
+              {targetLabel(targetAt, now, timeFormat)}
             </p>
           </div>
 
           <div className="relative">
             <div className="rounded-lg bg-[var(--app-surface)] p-4 shadow-2xl shadow-[var(--app-shadow)] ring-1 ring-[var(--app-border)]">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_58px] items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_72px] sm:gap-4">
+              <div
+                className={`grid items-stretch gap-3 sm:gap-4 ${
+                  timeFormat === "12h"
+                    ? "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_58px] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_72px]"
+                    : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
+                }`}
+              >
                 <TimeField
                   label="hour"
                   value={clock.hour}
@@ -447,16 +503,20 @@ export function Schedule({
                   onChange={(value) => edit("minute", value)}
                   onShift={shift}
                 />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setClock((prev) => exactClockState(addHours(prev.at, 12)))
-                  }
-                  className="cursor-pointer rounded-md bg-[var(--app-secondary-control)] text-lg font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] sm:text-2xl"
-                  aria-label={`Switch to ${format(clock.at, "a") === "AM" ? "PM" : "AM"}`}
-                >
-                  {format(clock.at, "a")}
-                </button>
+                {timeFormat === "12h" && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setClock((prev) =>
+                        exactClockState(addHours(prev.at, 12), timeFormat),
+                      )
+                    }
+                    className="cursor-pointer rounded-md bg-[var(--app-secondary-control)] text-lg font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] sm:text-2xl"
+                    aria-label={`Switch to ${format(clock.at, "a") === "AM" ? "PM" : "AM"}`}
+                  >
+                    {format(clock.at, "a")}
+                  </button>
+                )}
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
