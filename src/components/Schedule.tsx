@@ -28,7 +28,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import type { BlockTimerState } from "../appState";
+import type { BlockTimerState } from "../lib/appState";
 
 const MINUTE_STEP = 5;
 const DEFAULT_OFFSET_MINUTES = 90;

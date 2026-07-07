@@ -14,9 +14,9 @@ import completeNeutralSound from "../assets/sounds/complete-neutral.mp3";
 import {
   createDefaultBlocksState,
   type BlocksState,
-} from "../appState";
-import { sendBlockCompletionNotification } from "../notifications";
-import type { Block as BlockData, CompletionTone } from "../types";
+} from "../lib/appState";
+import { sendBlockCompletionNotification } from "../lib/notifications";
+import type { Block as BlockData, CompletionTone } from "../lib/types";
 import { Block } from "./Block";
 import { Muxer } from "./Muxer";
 

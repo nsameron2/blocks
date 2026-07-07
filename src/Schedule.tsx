@@ -14,7 +14,7 @@ import {
   dateKeyFor,
   type LogOffSchedule,
   type Weekday,
-} from "./logOffSchedule";
+} from "./lib/logOffSchedule";
 
 const WEEKDAYS: { label: string; value: Weekday }[] = [
   { label: "Monday", value: 1 },

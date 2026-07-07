@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import type { Block as BlockData } from "../types";
+import type { Block as BlockData } from "../lib/types";
 
 const MIN_DISPLAY_PERCENT = 1;
 

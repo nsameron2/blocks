@@ -20,11 +20,11 @@ import {
   type AppState,
   type BlocksState,
   type BlockTimerState,
-} from "./appState";
+} from "./lib/appState";
 import {
   resolveNextLogOffDate,
   type LogOffSchedule,
-} from "./logOffSchedule";
+} from "./lib/logOffSchedule";
 import { Settings } from "./Settings";
 
 const APP_STATE_SAVE_DEBOUNCE_MS = 500;

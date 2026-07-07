@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { ThumbsDown, ThumbsUp, X } from "lucide-react";
-import type { Block as BlockType, CompletionTone } from "../types";
+import type { Block as BlockType, CompletionTone } from "../lib/types";
 
 const COLOR_OPTIONS = [
   { label: "Gray", value: "bg-gray-500" },
