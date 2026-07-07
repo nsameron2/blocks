@@ -12,6 +12,10 @@
   --app-control: rgb(255 255 255);
   --app-control-text: rgb(10 10 10);
   --app-focus: rgb(255 255 255 / 0.7);
+  --app-disabled: rgb(64 64 64);
+  --app-disabled-text: rgb(163 163 163);
+  --app-date-overridden: rgb(82 82 82);
+  --app-today-ring: rgb(245 245 245 / 0.6);
 }
 
 :root[data-theme="light"] {
@@ -26,6 +30,10 @@
   --app-control: rgb(23 23 23);
   --app-control-text: rgb(255 255 255);
   --app-focus: rgb(23 23 23 / 0.35);
+  --app-disabled: rgb(229 229 229);
+  --app-disabled-text: rgb(115 115 115);
+  --app-date-overridden: rgb(212 212 212);
+  --app-today-ring: rgb(23 23 23 / 0.35);
 }
 
 html,
@@ -101,15 +109,15 @@ body,
 
 /* react-day-picker date picker in Schedule */
 .log-off-date-picker.rdp-root {
-  --rdp-accent-color: white;
-  --rdp-accent-background-color: rgb(64 64 64);
+  --rdp-accent-color: var(--app-control);
+  --rdp-accent-background-color: var(--app-hover);
   --rdp-day-height: 44px;
   --rdp-day-width: 44px;
   --rdp-day_button-height: 40px;
   --rdp-day_button-width: 40px;
   --rdp-day_button-border-radius: 6px;
   --rdp-selected-border: 0;
-  color: white;
+  color: var(--app-text);
   width: 100%;
 }
 
@@ -127,7 +135,7 @@ body,
 }
 
 .log-off-date-picker .rdp-nav {
-  color: rgb(212 212 212);
+  color: var(--app-subtle);
 }
 
 .log-off-date-picker .rdp-chevron {
@@ -135,7 +143,7 @@ body,
 }
 
 .log-off-date-picker .rdp-weekday {
-  color: rgb(163 163 163);
+  color: var(--app-muted);
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -147,28 +155,28 @@ body,
 }
 
 .log-off-date-picker .rdp-day_button:hover:not(:disabled) {
-  background: rgb(64 64 64);
+  background: var(--app-hover);
 }
 
 .log-off-date-picker .rdp-selected .rdp-day_button {
-  background: white;
-  color: rgb(23 23 23);
+  background: var(--app-control);
+  color: var(--app-control-text);
 }
 
 .log-off-date-picker .rdp-today:not(.rdp-selected) .rdp-day_button {
-  color: white;
-  box-shadow: inset 0 0 0 1px rgb(245 245 245 / 0.6);
+  color: var(--app-text);
+  box-shadow: inset 0 0 0 1px var(--app-today-ring);
 }
 
 .log-off-date-picker .rdp-disabled {
-  color: rgb(82 82 82);
+  color: var(--app-disabled-text);
   opacity: 1;
 }
 
 .log-off-date-picker .rdp-outside {
-  color: rgb(115 115 115);
+  color: var(--app-muted);
 }
 
 .log-off-date-picker .rdp-overridden:not(.rdp-selected) .rdp-day_button {
-  background: rgb(82 82 82);
+  background: var(--app-date-overridden);
 }

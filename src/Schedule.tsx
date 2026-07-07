@@ -169,19 +169,19 @@ export function Schedule({
       aria-label="Schedule"
     >
       <div className="w-full max-w-3xl">
-        <h1 className="text-4xl font-bold text-white sm:text-5xl">
+        <h1 className="text-4xl font-bold text-[var(--app-text)] sm:text-5xl">
           Log Off Schedule
         </h1>
 
         <div className="mx-auto mt-10 w-full max-w-2xl space-y-10">
           <section>
-            <h2 className="text-xl font-semibold text-neutral-200">
+            <h2 className="text-xl font-semibold text-[var(--app-subtle)]">
               Default time
             </h2>
-            <div className="mt-3 overflow-hidden rounded-md bg-neutral-800 ring-1 ring-white/10">
+            <div className="mt-3 overflow-hidden rounded-md bg-[var(--app-surface)] ring-1 ring-[var(--app-border)]">
               <div className="flex min-h-20 flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <label
-                  className="text-base font-semibold text-neutral-200 sm:text-lg"
+                  className="text-base font-semibold text-[var(--app-subtle)] sm:text-lg"
                   htmlFor="global-log-off-time"
                 >
                   Time
@@ -192,12 +192,12 @@ export function Schedule({
                     type="time"
                     value={draftDefaultTime}
                     onChange={(event) => setDraftDefaultTime(event.target.value)}
-                    className="h-12 min-w-0 flex-1 rounded-md bg-neutral-900 px-3 font-mono text-xl font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 sm:w-44 sm:flex-none"
+                    className="h-12 min-w-0 flex-1 rounded-md bg-[var(--app-surface-2)] px-3 font-mono text-xl font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] sm:w-44 sm:flex-none"
                   />
                   <button
                     type="button"
                     onClick={saveDefaultTime}
-                    className="inline-flex h-12 w-24 shrink-0 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70"
+                    className="inline-flex h-12 w-24 shrink-0 cursor-pointer items-center justify-center rounded-md bg-[var(--app-control)] text-base font-bold text-[var(--app-control-text)] transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)]"
                   >
                     Save
                   </button>
@@ -207,19 +207,19 @@ export function Schedule({
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-neutral-200">
+            <h2 className="text-xl font-semibold text-[var(--app-subtle)]">
               Weekly overrides
             </h2>
-            <div className="mt-3 overflow-hidden rounded-md bg-neutral-800 ring-1 ring-white/10">
+            <div className="mt-3 overflow-hidden rounded-md bg-[var(--app-surface)] ring-1 ring-[var(--app-border)]">
               {WEEKDAYS.map((weekday, index) => (
                 <div
                   key={weekday.value}
                   className={`flex min-h-16 flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
-                    index === 0 ? "" : "border-t border-white/10"
+                    index === 0 ? "" : "border-t border-[var(--app-border)]"
                   }`}
                 >
                   <label
-                    className="text-base font-semibold text-neutral-200 sm:text-lg"
+                    className="text-base font-semibold text-[var(--app-subtle)] sm:text-lg"
                     htmlFor={`weekday-log-off-time-${weekday.value}`}
                   >
                     {weekday.label}
@@ -232,13 +232,13 @@ export function Schedule({
                       onChange={(event) =>
                         updateWeekdayTime(weekday.value, event.target.value)
                       }
-                      className="h-12 min-w-0 flex-1 rounded-md bg-neutral-900 px-3 font-mono text-xl font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 sm:w-44 sm:flex-none"
+                      className="h-12 min-w-0 flex-1 rounded-md bg-[var(--app-surface-2)] px-3 font-mono text-xl font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] sm:w-44 sm:flex-none"
                     />
                     <button
                       type="button"
                       onClick={() => updateWeekdayTime(weekday.value, "")}
                       disabled={!draftWeekdayTimes[weekday.value]}
-                      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
+                      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-[var(--app-muted)] transition-colors hover:bg-[var(--app-hover)] hover:text-[var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--app-muted)]"
                       aria-label={`Clear ${weekday.label} override`}
                       title="Use default time"
                     >
@@ -247,11 +247,11 @@ export function Schedule({
                   </div>
                 </div>
               ))}
-              <div className="flex justify-end border-t border-white/10 px-4 py-6">
+              <div className="flex justify-end border-t border-[var(--app-border)] px-4 py-6">
                 <button
                   type="button"
                   onClick={saveWeekdayTimes}
-                  className="inline-flex h-12 w-32 cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70"
+                  className="inline-flex h-12 w-32 cursor-pointer items-center justify-center rounded-md bg-[var(--app-control)] text-base font-bold text-[var(--app-control-text)] transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)]"
                 >
                   Save weekly
                 </button>
@@ -260,10 +260,10 @@ export function Schedule({
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-neutral-200">
+            <h2 className="text-xl font-semibold text-[var(--app-subtle)]">
               Date overrides
             </h2>
-            <div className="mt-3 overflow-hidden rounded-md bg-neutral-800 ring-1 ring-white/10">
+            <div className="mt-3 overflow-hidden rounded-md bg-[var(--app-surface)] ring-1 ring-[var(--app-border)]">
               <div className="px-4 py-4">
                 <DayPicker
                   mode="single"
@@ -277,15 +277,15 @@ export function Schedule({
                 />
               </div>
 
-              <div className="grid gap-3 border-t border-white/10 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_176px_112px] sm:items-center">
+              <div className="grid gap-3 border-t border-[var(--app-border)] px-4 py-4 sm:grid-cols-[minmax(0,1fr)_176px_112px] sm:items-center">
                 <div className="min-w-0">
                   <label
-                    className="block text-base font-semibold text-neutral-200 sm:text-lg"
+                    className="block text-base font-semibold text-[var(--app-subtle)] sm:text-lg"
                     htmlFor="date-log-off-time"
                   >
                     Selected date
                   </label>
-                  <p className="mt-1 truncate text-sm font-medium text-neutral-400">
+                  <p className="mt-1 truncate text-sm font-medium text-[var(--app-muted)]">
                     {selectedDateLabel}
                   </p>
                 </div>
@@ -298,13 +298,13 @@ export function Schedule({
                   onChange={(event) =>
                     setDraftDateOverrideTime(event.target.value)
                   }
-                  className="h-12 min-w-0 rounded-md bg-neutral-900 px-3 font-mono text-xl font-bold text-white ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="h-12 min-w-0 rounded-md bg-[var(--app-surface-2)] px-3 font-mono text-xl font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] disabled:cursor-not-allowed disabled:opacity-40"
                 />
                 <button
                   type="button"
                   onClick={saveDateOverride}
                   disabled={!canSaveDateOverride}
-                  className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-md bg-white text-base font-bold text-neutral-950 transition-colors hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/70 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 disabled:hover:bg-neutral-700"
+                  className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-md bg-[var(--app-control)] text-base font-bold text-[var(--app-control-text)] transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] disabled:cursor-not-allowed disabled:bg-[var(--app-disabled)] disabled:text-[var(--app-disabled-text)] disabled:hover:bg-[var(--app-disabled)] disabled:hover:opacity-100"
                 >
                   Save date
                 </button>
