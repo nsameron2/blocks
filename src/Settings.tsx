@@ -5,13 +5,15 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun, Upload } from "lucide-react";
 import type {
   AppSettings,
   CompletionSound,
+  CustomCompletionSound,
+  CustomSound,
   ThemePreference,
 } from "./lib/appState";
-import { COMPLETION_SOUND_FILES } from "./lib/completionSounds";
+import { completionSoundSource } from "./lib/completionSounds";
 import type { CompletionTone } from "./lib/types";
 
 const THEME_OPTIONS: {
@@ -36,6 +38,36 @@ const COMPLETION_SOUND_ROWS: { tone: CompletionTone; label: string }[] = [
   { tone: "neutral", label: "Neutral" },
 ];
 
+function createCustomSoundId(): CustomCompletionSound {
+  const uniqueId =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
+  return `custom:${uniqueId}`;
+}
+
+function readCustomSoundFile(file: File): Promise<CustomSound> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error(`Failed to read ${file.name}`));
+        return;
+      }
+
+      resolve({
+        id: createCustomSoundId(),
+        name: file.name,
+        dataUrl: reader.result,
+      });
+    };
+    reader.onerror = () =>
+      reject(reader.error ?? new Error(`Failed to read ${file.name}`));
+    reader.readAsDataURL(file);
+  });
+}
+
 function soundOptionLabel(
   option: { value: CompletionSound; label: string },
   defaultSound: CompletionSound,
@@ -51,12 +83,18 @@ interface SettingsProps {
 }
 
 export function Settings({ settings, onSettingsChange }: SettingsProps) {
-  const previewAudioRef = useRef<
-    Partial<Record<CompletionSound, HTMLAudioElement>>
-  >({});
+  const previewAudioRef = useRef<Record<string, HTMLAudioElement>>({});
+  const customSoundInputRef = useRef<HTMLInputElement>(null);
   const [volumeInput, setVolumeInput] = useState(
     String(settings.sound.notificationVolume),
   );
+  const soundOptions = [
+    ...SOUND_OPTIONS,
+    ...settings.sound.customSounds.map((sound) => ({
+      value: sound.id as CompletionSound,
+      label: sound.name,
+    })),
+  ];
 
   useEffect(() => {
     setVolumeInput(String(settings.sound.notificationVolume));
@@ -103,6 +141,21 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
     }));
   }
 
+  async function handleCustomSoundUpload(files: FileList | null) {
+    if (!files || files.length === 0) return;
+
+    const customSounds = await Promise.all(
+      Array.from(files).map(readCustomSoundFile),
+    );
+    onSettingsChange((previous) => ({
+      ...previous,
+      sound: {
+        ...previous.sound,
+        customSounds: [...previous.sound.customSounds, ...customSounds],
+      },
+    }));
+  }
+
   function previewCompletionSound(sound: CompletionSound) {
     Object.values(previewAudioRef.current).forEach((audio) => {
       if (!audio) return;
@@ -116,8 +169,11 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
     );
     if (volume === 0) return;
 
+    const source = completionSoundSource(sound, settings.sound.customSounds);
+    if (!source) return;
+
     const audio =
-      previewAudioRef.current[sound] ?? new Audio(COMPLETION_SOUND_FILES[sound]);
+      previewAudioRef.current[sound] ?? new Audio(source);
     previewAudioRef.current[sound] = audio;
     audio.volume = volume;
     audio.currentTime = 0;
@@ -223,8 +279,32 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
                 </div>
               </div>
               <div className="border-t border-[var(--app-border)] px-4 py-4">
-                <div className="text-base font-semibold text-[var(--app-subtle)] sm:text-lg">
-                  Completion sounds
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-base font-semibold text-[var(--app-subtle)] sm:text-lg">
+                    Completion sounds
+                  </div>
+                  <input
+                    ref={customSoundInputRef}
+                    type="file"
+                    accept="audio/*"
+                    multiple
+                    onChange={(event) => {
+                      void handleCustomSoundUpload(event.target.files).finally(
+                        () => {
+                          event.target.value = "";
+                        },
+                      );
+                    }}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => customSoundInputRef.current?.click()}
+                    className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md bg-[var(--app-secondary-control)] px-3 text-sm font-semibold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)]"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload
+                  </button>
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {COMPLETION_SOUND_ROWS.map(({ tone, label }) => (
@@ -247,7 +327,7 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
                         }
                         className="h-9 w-full cursor-pointer rounded-md bg-[var(--app-native-control-bg)] px-3 text-sm font-semibold text-[var(--app-native-control-text)] outline-none ring-1 ring-[var(--app-border)] focus:ring-2 focus:ring-[var(--app-focus)]"
                       >
-                        {SOUND_OPTIONS.map((option) => (
+                        {soundOptions.map((option) => (
                           <option
                             key={option.value}
                             value={option.value}

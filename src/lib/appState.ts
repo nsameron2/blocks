@@ -11,6 +11,7 @@ const DEFAULT_BLOCK_ID = 1;
 const DEFAULT_NEXT_BLOCK_ID = 2;
 const DEFAULT_NEXT_PRESET_ID = 1;
 const COMPLETION_TONES: CompletionTone[] = ["good", "bad", "neutral"];
+const CUSTOM_SOUND_ID_PREFIX = "custom:";
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -24,7 +25,8 @@ export interface AppState {
 
 export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
-export type CompletionSound = CompletionTone;
+export type CustomCompletionSound = `${typeof CUSTOM_SOUND_ID_PREFIX}${string}`;
+export type CompletionSound = CompletionTone | CustomCompletionSound;
 export type CompletionSoundSettings = Record<CompletionTone, CompletionSound>;
 
 export interface AppSettings {
@@ -39,6 +41,13 @@ export interface AppearanceSettings {
 export interface SoundSettings {
   notificationVolume: number;
   completionSounds: CompletionSoundSettings;
+  customSounds: CustomSound[];
+}
+
+export interface CustomSound {
+  id: CustomCompletionSound;
+  name: string;
+  dataUrl: string;
 }
 
 export interface BlocksState {
@@ -132,6 +141,7 @@ export function createDefaultSettings(): AppSettings {
         bad: "bad",
         neutral: "neutral",
       },
+      customSounds: [],
     },
   };
 }
@@ -315,6 +325,8 @@ function normalizeSoundSettings(value: unknown): SoundSettings {
   const defaults = createDefaultSettings().sound;
   const record = asRecord(value);
   if (!record) return defaults;
+  const customSounds = normalizeCustomSounds(record.customSounds);
+  const customSoundIds = new Set(customSounds.map((sound) => sound.id));
 
   return {
     notificationVolume: clamp(
@@ -322,19 +334,59 @@ function normalizeSoundSettings(value: unknown): SoundSettings {
       0,
       100,
     ),
-    completionSounds: normalizeCompletionSoundSettings(record.completionSounds),
+    completionSounds: normalizeCompletionSoundSettings(
+      record.completionSounds,
+      customSoundIds,
+    ),
+    customSounds,
   };
 }
 
-function normalizeCompletionSoundSettings(value: unknown): CompletionSoundSettings {
+function normalizeCompletionSoundSettings(
+  value: unknown,
+  customSoundIds: Set<CustomCompletionSound>,
+): CompletionSoundSettings {
   const defaults = createDefaultSettings().sound.completionSounds;
   const record = asRecord(value);
   if (!record) return defaults;
 
   return {
-    good: completionSoundOr(record.good, defaults.good),
-    bad: completionSoundOr(record.bad, defaults.bad),
-    neutral: completionSoundOr(record.neutral, defaults.neutral),
+    good: completionSoundOr(record.good, defaults.good, customSoundIds),
+    bad: completionSoundOr(record.bad, defaults.bad, customSoundIds),
+    neutral: completionSoundOr(record.neutral, defaults.neutral, customSoundIds),
+  };
+}
+
+function normalizeCustomSounds(value: unknown): CustomSound[] {
+  if (!Array.isArray(value)) return [];
+
+  const customSounds: CustomSound[] = [];
+  const seenIds = new Set<CustomCompletionSound>();
+
+  for (const item of value) {
+    const customSound = normalizeCustomSound(item);
+    if (!customSound || seenIds.has(customSound.id)) continue;
+    seenIds.add(customSound.id);
+    customSounds.push(customSound);
+  }
+
+  return customSounds;
+}
+
+function normalizeCustomSound(value: unknown): CustomSound | null {
+  const record = asRecord(value);
+  if (!record) return null;
+  if (!isCustomCompletionSoundId(record.id)) return null;
+  if (typeof record.dataUrl !== "string" || !record.dataUrl.startsWith("data:")) {
+    return null;
+  }
+
+  const name = stringOr(record.name, "").trim();
+
+  return {
+    id: record.id,
+    name: name || "Custom sound",
+    dataUrl: record.dataUrl,
   };
 }
 
@@ -457,14 +509,30 @@ function themePreferenceOr(
 function completionSoundOr(
   value: unknown,
   fallback: CompletionSound,
+  customSoundIds: Set<CustomCompletionSound>,
 ): CompletionSound {
-  return isCompletionTone(value) ? value : fallback;
+  if (isCompletionTone(value)) return value;
+  if (isCustomCompletionSoundId(value) && customSoundIds.has(value)) {
+    return value;
+  }
+
+  return fallback;
 }
 
 function isCompletionTone(value: unknown): value is CompletionTone {
   return (
     typeof value === "string" &&
     COMPLETION_TONES.includes(value as CompletionTone)
+  );
+}
+
+function isCustomCompletionSoundId(
+  value: unknown,
+): value is CustomCompletionSound {
+  return (
+    typeof value === "string" &&
+    value.startsWith(CUSTOM_SOUND_ID_PREFIX) &&
+    value.length > CUSTOM_SOUND_ID_PREFIX.length
   );
 }
 

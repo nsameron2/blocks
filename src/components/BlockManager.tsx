@@ -12,9 +12,10 @@ import {
   createDefaultBlocksState,
   type BlocksState,
   type CompletionSoundSettings,
+  type CustomSound,
   type ResolvedTheme,
 } from "../lib/appState";
-import { COMPLETION_SOUND_FILES } from "../lib/completionSounds";
+import { completionSoundSource } from "../lib/completionSounds";
 import { sendBlockCompletionNotification } from "../lib/notifications";
 import type { Block as BlockData, CompletionTone } from "../lib/types";
 import { Block } from "./Block";
@@ -28,6 +29,7 @@ interface BlockManagerProps {
   resolvedTheme: ResolvedTheme;
   notificationVolume: number;
   completionSounds: CompletionSoundSettings;
+  customSounds: CustomSound[];
 }
 
 function completionToneForBlock(block: BlockData): CompletionTone {
@@ -58,6 +60,7 @@ export function BlockManager({
   resolvedTheme,
   notificationVolume,
   completionSounds,
+  customSounds,
 }: BlockManagerProps) {
   const {
     blocks,
@@ -69,7 +72,7 @@ export function BlockManager({
   } = blocksState;
   const blocksRef = useRef(blocks);
   const completionTonesRef = useRef(completionTones);
-  const completionAudioRef = useRef<Partial<Record<CompletionTone, HTMLAudioElement>>>({});
+  const completionAudioRef = useRef<Record<string, HTMLAudioElement>>({});
   const blockElementsRef = useRef<Record<number, HTMLDivElement>>({});
   const presetMenuRef = useRef<HTMLDivElement>(null);
   const [presetName, setPresetName] = useState("");
@@ -107,9 +110,13 @@ export function BlockManager({
     if (volume === 0) return;
 
     const sound = completionSounds[tone] ?? tone;
+    const source =
+      completionSoundSource(sound, customSounds) ??
+      completionSoundSource(tone, customSounds);
+    if (!source) return;
+
     const audio =
-      completionAudioRef.current[sound] ??
-      new Audio(COMPLETION_SOUND_FILES[sound]);
+      completionAudioRef.current[sound] ?? new Audio(source);
     completionAudioRef.current[sound] = audio;
     audio.volume = volume;
     audio.currentTime = 0;
@@ -235,6 +242,7 @@ export function BlockManager({
     blockSpent,
     blocks,
     completionSounds,
+    customSounds,
     notificationVolume,
     onBlocksStateChange,
     scheduleStarted,

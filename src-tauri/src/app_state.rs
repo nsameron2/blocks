@@ -151,6 +151,8 @@ pub struct SoundSettings {
     pub notification_volume: u8,
     #[serde(default)]
     pub completion_sounds: CompletionSoundSettings,
+    #[serde(default)]
+    pub custom_sounds: Vec<CustomSound>,
 }
 
 impl Default for SoundSettings {
@@ -158,6 +160,7 @@ impl Default for SoundSettings {
         Self {
             notification_volume: default_notification_volume(),
             completion_sounds: CompletionSoundSettings::default(),
+            custom_sounds: Vec::new(),
         }
     }
 }
@@ -166,11 +169,11 @@ impl Default for SoundSettings {
 #[serde(rename_all = "camelCase")]
 pub struct CompletionSoundSettings {
     #[serde(default = "default_good_completion_sound")]
-    pub good: CompletionTone,
+    pub good: String,
     #[serde(default = "default_bad_completion_sound")]
-    pub bad: CompletionTone,
+    pub bad: String,
     #[serde(default = "default_neutral_completion_sound")]
-    pub neutral: CompletionTone,
+    pub neutral: String,
 }
 
 impl Default for CompletionSoundSettings {
@@ -181,6 +184,14 @@ impl Default for CompletionSoundSettings {
             neutral: default_neutral_completion_sound(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomSound {
+    pub id: String,
+    pub name: String,
+    pub data_url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -247,16 +258,16 @@ fn default_notification_volume() -> u8 {
     100
 }
 
-fn default_good_completion_sound() -> CompletionTone {
-    CompletionTone::Good
+fn default_good_completion_sound() -> String {
+    "good".to_string()
 }
 
-fn default_bad_completion_sound() -> CompletionTone {
-    CompletionTone::Bad
+fn default_bad_completion_sound() -> String {
+    "bad".to_string()
 }
 
-fn default_neutral_completion_sound() -> CompletionTone {
-    CompletionTone::Neutral
+fn default_neutral_completion_sound() -> String {
+    "neutral".to_string()
 }
 
 fn default_blocks() -> Vec<Block> {
