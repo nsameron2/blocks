@@ -165,8 +165,7 @@ export function Block({
                     max={100}
                     value={block.percent}
                     onChange={(e) => onPercentChange(block.id, Number(e.target.value))}
-                    className="slider-clamped absolute inset-0 h-28 w-1"
-                    style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
+                    className="slider-clamped absolute left-1/2 top-1/2 h-4 w-28 -translate-x-1/2 -translate-y-1/2 -rotate-90"
                   />
                 </div>
               </div>
