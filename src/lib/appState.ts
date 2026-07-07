@@ -24,6 +24,8 @@ export interface AppState {
 
 export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
+export type CompletionSound = CompletionTone;
+export type CompletionSoundSettings = Record<CompletionTone, CompletionSound>;
 
 export interface AppSettings {
   appearance: AppearanceSettings;
@@ -36,6 +38,7 @@ export interface AppearanceSettings {
 
 export interface SoundSettings {
   notificationVolume: number;
+  completionSounds: CompletionSoundSettings;
 }
 
 export interface BlocksState {
@@ -124,6 +127,11 @@ export function createDefaultSettings(): AppSettings {
     },
     sound: {
       notificationVolume: 100,
+      completionSounds: {
+        good: "good",
+        bad: "bad",
+        neutral: "neutral",
+      },
     },
   };
 }
@@ -314,6 +322,19 @@ function normalizeSoundSettings(value: unknown): SoundSettings {
       0,
       100,
     ),
+    completionSounds: normalizeCompletionSoundSettings(record.completionSounds),
+  };
+}
+
+function normalizeCompletionSoundSettings(value: unknown): CompletionSoundSettings {
+  const defaults = createDefaultSettings().sound.completionSounds;
+  const record = asRecord(value);
+  if (!record) return defaults;
+
+  return {
+    good: completionSoundOr(record.good, defaults.good),
+    bad: completionSoundOr(record.bad, defaults.bad),
+    neutral: completionSoundOr(record.neutral, defaults.neutral),
   };
 }
 
@@ -431,6 +452,13 @@ function themePreferenceOr(
   return value === "system" || value === "light" || value === "dark"
     ? value
     : fallback;
+}
+
+function completionSoundOr(
+  value: unknown,
+  fallback: CompletionSound,
+): CompletionSound {
+  return isCompletionTone(value) ? value : fallback;
 }
 
 function isCompletionTone(value: unknown): value is CompletionTone {

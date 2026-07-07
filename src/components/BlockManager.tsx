@@ -8,24 +8,17 @@ import {
 } from "react";
 import confetti from "canvas-confetti";
 import { ChevronDown, RefreshCw, Save } from "lucide-react";
-import completeBadSound from "../assets/sounds/complete-bad.mp3";
-import completeGoodSound from "../assets/sounds/complete-good.mp3";
-import completeNeutralSound from "../assets/sounds/complete-neutral.mp3";
 import {
   createDefaultBlocksState,
   type BlocksState,
+  type CompletionSoundSettings,
   type ResolvedTheme,
 } from "../lib/appState";
+import { COMPLETION_SOUND_FILES } from "../lib/completionSounds";
 import { sendBlockCompletionNotification } from "../lib/notifications";
 import type { Block as BlockData, CompletionTone } from "../lib/types";
 import { Block } from "./Block";
 import { Muxer } from "./Muxer";
-
-const COMPLETION_SOUNDS: Record<CompletionTone, string> = {
-  good: completeGoodSound,
-  bad: completeBadSound,
-  neutral: completeNeutralSound,
-};
 
 interface BlockManagerProps {
   blocksState: BlocksState;
@@ -34,6 +27,7 @@ interface BlockManagerProps {
   scheduleStarted: boolean;
   resolvedTheme: ResolvedTheme;
   notificationVolume: number;
+  completionSounds: CompletionSoundSettings;
 }
 
 function completionToneForBlock(block: BlockData): CompletionTone {
@@ -63,6 +57,7 @@ export function BlockManager({
   scheduleStarted,
   resolvedTheme,
   notificationVolume,
+  completionSounds,
 }: BlockManagerProps) {
   const {
     blocks,
@@ -111,9 +106,11 @@ export function BlockManager({
     const volume = Math.max(0, Math.min(1, notificationVolume / 100));
     if (volume === 0) return;
 
+    const sound = completionSounds[tone] ?? tone;
     const audio =
-      completionAudioRef.current[tone] ?? new Audio(COMPLETION_SOUNDS[tone]);
-    completionAudioRef.current[tone] = audio;
+      completionAudioRef.current[sound] ??
+      new Audio(COMPLETION_SOUND_FILES[sound]);
+    completionAudioRef.current[sound] = audio;
     audio.volume = volume;
     audio.currentTime = 0;
     void audio.play().catch(() => undefined);
@@ -237,6 +234,7 @@ export function BlockManager({
   }, [
     blockSpent,
     blocks,
+    completionSounds,
     notificationVolume,
     onBlocksStateChange,
     scheduleStarted,

@@ -21,6 +21,7 @@ import {
   type AppSettings,
   type BlocksState,
   type BlockTimerState,
+  type CompletionSoundSettings,
   type ResolvedTheme,
   type ThemePreference,
 } from "./lib/appState";
@@ -67,6 +68,7 @@ function BlocksPage({
   targetLogOffAt,
   resolvedTheme,
   notificationVolume,
+  completionSounds,
 }: {
   blocksState: BlocksState;
   blockTimerState: BlockTimerState;
@@ -76,6 +78,7 @@ function BlocksPage({
   targetLogOffAt: Date | null;
   resolvedTheme: ResolvedTheme;
   notificationVolume: number;
+  completionSounds: CompletionSoundSettings;
 }) {
   const totalAllocationPercent = blocksState.blocks.reduce(
     (sum, block) => sum + block.percent,
@@ -98,6 +101,7 @@ function BlocksPage({
         scheduleStarted={blockTimerState.started}
         resolvedTheme={resolvedTheme}
         notificationVolume={notificationVolume}
+        completionSounds={completionSounds}
       />
     </section>
   );
@@ -245,6 +249,7 @@ function App() {
             targetLogOffAt={targetLogOffAt}
             resolvedTheme={resolvedTheme}
             notificationVolume={appState.settings.sound.notificationVolume}
+            completionSounds={appState.settings.sound.completionSounds}
           />
         )}
         {currentPage === "schedule" && (

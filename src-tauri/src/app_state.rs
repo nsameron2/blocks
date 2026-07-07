@@ -149,12 +149,36 @@ impl Default for AppearanceSettings {
 pub struct SoundSettings {
     #[serde(default = "default_notification_volume")]
     pub notification_volume: u8,
+    #[serde(default)]
+    pub completion_sounds: CompletionSoundSettings,
 }
 
 impl Default for SoundSettings {
     fn default() -> Self {
         Self {
             notification_volume: default_notification_volume(),
+            completion_sounds: CompletionSoundSettings::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CompletionSoundSettings {
+    #[serde(default = "default_good_completion_sound")]
+    pub good: CompletionTone,
+    #[serde(default = "default_bad_completion_sound")]
+    pub bad: CompletionTone,
+    #[serde(default = "default_neutral_completion_sound")]
+    pub neutral: CompletionTone,
+}
+
+impl Default for CompletionSoundSettings {
+    fn default() -> Self {
+        Self {
+            good: default_good_completion_sound(),
+            bad: default_bad_completion_sound(),
+            neutral: default_neutral_completion_sound(),
         }
     }
 }
@@ -221,6 +245,18 @@ fn default_next_preset_id() -> u32 {
 
 fn default_notification_volume() -> u8 {
     100
+}
+
+fn default_good_completion_sound() -> CompletionTone {
+    CompletionTone::Good
+}
+
+fn default_bad_completion_sound() -> CompletionTone {
+    CompletionTone::Bad
+}
+
+fn default_neutral_completion_sound() -> CompletionTone {
+    CompletionTone::Neutral
 }
 
 fn default_blocks() -> Vec<Block> {

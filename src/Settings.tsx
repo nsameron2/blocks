@@ -1,6 +1,18 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
-import type { AppSettings, ThemePreference } from "./lib/appState";
+import type {
+  AppSettings,
+  CompletionSound,
+  ThemePreference,
+} from "./lib/appState";
+import { COMPLETION_SOUND_FILES } from "./lib/completionSounds";
+import type { CompletionTone } from "./lib/types";
 
 const THEME_OPTIONS: {
   value: ThemePreference;
@@ -12,12 +24,36 @@ const THEME_OPTIONS: {
   { value: "dark", label: "Dark", Icon: Moon },
 ];
 
+const SOUND_OPTIONS: { value: CompletionSound; label: string }[] = [
+  { value: "good", label: "Complete" },
+  { value: "bad", label: "Alarm beep" },
+  { value: "neutral", label: "Chime" },
+];
+
+const COMPLETION_SOUND_ROWS: { tone: CompletionTone; label: string }[] = [
+  { tone: "good", label: "Good" },
+  { tone: "bad", label: "Bad" },
+  { tone: "neutral", label: "Neutral" },
+];
+
+function soundOptionLabel(
+  option: { value: CompletionSound; label: string },
+  defaultSound: CompletionSound,
+) {
+  return option.value === defaultSound
+    ? `${option.label} (Default)`
+    : option.label;
+}
+
 interface SettingsProps {
   settings: AppSettings;
   onSettingsChange: Dispatch<SetStateAction<AppSettings>>;
 }
 
 export function Settings({ settings, onSettingsChange }: SettingsProps) {
+  const previewAudioRef = useRef<
+    Partial<Record<CompletionSound, HTMLAudioElement>>
+  >({});
   const [volumeInput, setVolumeInput] = useState(
     String(settings.sound.notificationVolume),
   );
@@ -52,6 +88,48 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
     setVolumeInput(value);
     if (value === "") return;
     updateNotificationVolume(Number(value));
+  }
+
+  function updateCompletionSound(tone: CompletionTone, sound: CompletionSound) {
+    onSettingsChange((previous) => ({
+      ...previous,
+      sound: {
+        ...previous.sound,
+        completionSounds: {
+          ...previous.sound.completionSounds,
+          [tone]: sound,
+        },
+      },
+    }));
+  }
+
+  function previewCompletionSound(sound: CompletionSound) {
+    Object.values(previewAudioRef.current).forEach((audio) => {
+      if (!audio) return;
+      audio.pause();
+      audio.currentTime = 0;
+    });
+
+    const volume = Math.max(
+      0,
+      Math.min(1, settings.sound.notificationVolume / 100),
+    );
+    if (volume === 0) return;
+
+    const audio =
+      previewAudioRef.current[sound] ?? new Audio(COMPLETION_SOUND_FILES[sound]);
+    previewAudioRef.current[sound] = audio;
+    audio.volume = volume;
+    audio.currentTime = 0;
+    void audio.play().catch(() => undefined);
+  }
+
+  function handleCompletionSoundChange(
+    tone: CompletionTone,
+    sound: CompletionSound,
+  ) {
+    updateCompletionSound(tone, sound);
+    previewCompletionSound(sound);
   }
 
   return (
@@ -102,7 +180,7 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
 
           <section>
             <h2 className="text-xl font-semibold text-[var(--app-subtle)]">
-              Sound
+              Sounds
             </h2>
             <div className="mt-3 overflow-hidden rounded-md bg-[var(--app-surface)] ring-1 ring-[var(--app-border)]">
               <div className="flex min-h-20 flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -142,6 +220,45 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
                     aria-label="Notification sound volume"
                     className="h-2 w-full cursor-pointer accent-[var(--app-control)] sm:w-64"
                   />
+                </div>
+              </div>
+              <div className="border-t border-[var(--app-border)] px-4 py-4">
+                <div className="text-base font-semibold text-[var(--app-subtle)] sm:text-lg">
+                  Completion sounds
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {COMPLETION_SOUND_ROWS.map(({ tone, label }) => (
+                    <label
+                      key={tone}
+                      htmlFor={`${tone}-completion-sound`}
+                      className="block"
+                    >
+                      <span className="mb-2 block text-sm font-semibold text-[var(--app-muted)]">
+                        {label}
+                      </span>
+                      <select
+                        id={`${tone}-completion-sound`}
+                        value={settings.sound.completionSounds[tone]}
+                        onChange={(event) =>
+                          handleCompletionSoundChange(
+                            tone,
+                            event.target.value as CompletionSound,
+                          )
+                        }
+                        className="h-9 w-full cursor-pointer rounded-md bg-[var(--app-native-control-bg)] px-3 text-sm font-semibold text-[var(--app-native-control-text)] outline-none ring-1 ring-[var(--app-border)] focus:ring-2 focus:ring-[var(--app-focus)]"
+                      >
+                        {SOUND_OPTIONS.map((option) => (
+                          <option
+                            key={option.value}
+                            value={option.value}
+                            className="bg-[var(--app-native-control-bg)] text-[var(--app-native-control-text)]"
+                          >
+                            {soundOptionLabel(option, tone)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
                 </div>
               </div>
             </div>
