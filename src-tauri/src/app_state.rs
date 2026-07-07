@@ -125,6 +125,8 @@ pub struct Schedule {
 pub struct AppSettings {
     #[serde(default)]
     pub appearance: AppearanceSettings,
+    #[serde(default)]
+    pub sound: SoundSettings,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -138,6 +140,21 @@ impl Default for AppearanceSettings {
     fn default() -> Self {
         Self {
             theme: ThemePreference::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct SoundSettings {
+    #[serde(default = "default_notification_volume")]
+    pub notification_volume: u8,
+}
+
+impl Default for SoundSettings {
+    fn default() -> Self {
+        Self {
+            notification_volume: default_notification_volume(),
         }
     }
 }
@@ -200,6 +217,10 @@ fn default_next_block_id() -> u32 {
 
 fn default_next_preset_id() -> u32 {
     1
+}
+
+fn default_notification_volume() -> u8 {
+    100
 }
 
 fn default_blocks() -> Vec<Block> {

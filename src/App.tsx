@@ -66,6 +66,7 @@ function BlocksPage({
   onAppReset,
   targetLogOffAt,
   resolvedTheme,
+  notificationVolume,
 }: {
   blocksState: BlocksState;
   blockTimerState: BlockTimerState;
@@ -74,6 +75,7 @@ function BlocksPage({
   onAppReset: () => void;
   targetLogOffAt: Date | null;
   resolvedTheme: ResolvedTheme;
+  notificationVolume: number;
 }) {
   const totalAllocationPercent = blocksState.blocks.reduce(
     (sum, block) => sum + block.percent,
@@ -95,6 +97,7 @@ function BlocksPage({
         totalDurationMs={blockTimerState.totalDurationMs}
         scheduleStarted={blockTimerState.started}
         resolvedTheme={resolvedTheme}
+        notificationVolume={notificationVolume}
       />
     </section>
   );
@@ -241,6 +244,7 @@ function App() {
             onAppReset={resetAppState}
             targetLogOffAt={targetLogOffAt}
             resolvedTheme={resolvedTheme}
+            notificationVolume={appState.settings.sound.notificationVolume}
           />
         )}
         {currentPage === "schedule" && (

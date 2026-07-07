@@ -33,6 +33,7 @@ interface BlockManagerProps {
   totalDurationMs: number;
   scheduleStarted: boolean;
   resolvedTheme: ResolvedTheme;
+  notificationVolume: number;
 }
 
 function completionToneForBlock(block: BlockData): CompletionTone {
@@ -61,6 +62,7 @@ export function BlockManager({
   totalDurationMs,
   scheduleStarted,
   resolvedTheme,
+  notificationVolume,
 }: BlockManagerProps) {
   const {
     blocks,
@@ -106,9 +108,13 @@ export function BlockManager({
   }, [presetsOpen]);
 
   function playCompletionSound(tone: CompletionTone) {
+    const volume = Math.max(0, Math.min(1, notificationVolume / 100));
+    if (volume === 0) return;
+
     const audio =
       completionAudioRef.current[tone] ?? new Audio(COMPLETION_SOUNDS[tone]);
     completionAudioRef.current[tone] = audio;
+    audio.volume = volume;
     audio.currentTime = 0;
     void audio.play().catch(() => undefined);
   }
@@ -228,7 +234,14 @@ export function BlockManager({
         completionTones: nextCompletionTones,
       }));
     }
-  }, [blockSpent, blocks, onBlocksStateChange, scheduleStarted, totalDurationMs]);
+  }, [
+    blockSpent,
+    blocks,
+    notificationVolume,
+    onBlocksStateChange,
+    scheduleStarted,
+    totalDurationMs,
+  ]);
 
   const totalAllocated = blocks.reduce((sum, b) => sum + b.percent, 0);
   const remainingPercent = Math.max(0, 100 - totalAllocated);

@@ -27,10 +27,15 @@ export type ResolvedTheme = "light" | "dark";
 
 export interface AppSettings {
   appearance: AppearanceSettings;
+  sound: SoundSettings;
 }
 
 export interface AppearanceSettings {
   theme: ThemePreference;
+}
+
+export interface SoundSettings {
+  notificationVolume: number;
 }
 
 export interface BlocksState {
@@ -116,6 +121,9 @@ export function createDefaultSettings(): AppSettings {
   return {
     appearance: {
       theme: "system",
+    },
+    sound: {
+      notificationVolume: 100,
     },
   };
 }
@@ -281,6 +289,7 @@ function normalizeSettings(value: unknown): AppSettings {
 
   return {
     appearance: normalizeAppearanceSettings(record.appearance),
+    sound: normalizeSoundSettings(record.sound),
   };
 }
 
@@ -291,6 +300,20 @@ function normalizeAppearanceSettings(value: unknown): AppearanceSettings {
 
   return {
     theme: themePreferenceOr(record.theme, defaults.theme),
+  };
+}
+
+function normalizeSoundSettings(value: unknown): SoundSettings {
+  const defaults = createDefaultSettings().sound;
+  const record = asRecord(value);
+  if (!record) return defaults;
+
+  return {
+    notificationVolume: clamp(
+      integerOr(record.notificationVolume, defaults.notificationVolume),
+      0,
+      100,
+    ),
   };
 }
 
