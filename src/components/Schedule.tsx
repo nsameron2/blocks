@@ -152,6 +152,21 @@ function TimeField({
   onChange: (value: string) => void;
   onShift: (minutes: number) => void;
 }) {
+  const [draftValue, setDraftValue] = useState(value);
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraftValue(value);
+    }
+  }, [isEditing, value]);
+
+  function updateValue(value: string) {
+    const nextValue = value.replace(/\D/g, "").slice(-2);
+    setDraftValue(nextValue);
+    onChange(nextValue);
+  }
+
   return (
     <div className="flex min-w-0 flex-col items-center rounded-md bg-[var(--app-surface-2)] px-2 py-2 ring-1 ring-[var(--app-border)]">
       <button
@@ -167,10 +182,15 @@ function TimeField({
         inputMode="numeric"
         pattern="[0-9]*"
         maxLength={2}
-        value={value}
-        onFocus={(e) => e.currentTarget.select()}
+        value={isEditing ? draftValue : value}
+        onFocus={(e) => {
+          setIsEditing(true);
+          setDraftValue(value);
+          e.currentTarget.select();
+        }}
         onClick={(e) => e.currentTarget.select()}
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(-2))}
+        onBlur={() => setIsEditing(false)}
+        onChange={(e) => updateValue(e.target.value)}
         aria-label={`Edit ${label}`}
         className="h-16 w-full min-w-0 cursor-text bg-transparent px-0 text-center font-mono text-4xl font-bold leading-none tabular-nums text-[var(--app-text)] outline-none sm:text-6xl"
       />
