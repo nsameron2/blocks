@@ -37,6 +37,7 @@ const QUICK_OFFSETS = [
   { label: "1h", minutes: 60 },
   { label: "90m", minutes: 90 },
   { label: "2h", minutes: 120 },
+  { label: "1d", minutes: 1440 }
 ];
 const TIME_BUTTON_CLASS =
   "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--app-subtle)] transition-colors hover:bg-[var(--app-hover)] focus:outline-none";
@@ -539,7 +540,7 @@ export function Schedule({
                 )}
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="mt-4 grid grid-cols-5 gap-2">
                 {QUICK_OFFSETS.map((offset) => (
                   <QuickOffset
                     key={offset.label}
