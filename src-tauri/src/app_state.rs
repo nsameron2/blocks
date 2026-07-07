@@ -20,6 +20,8 @@ pub struct AppState {
     pub block_timer: BlockTimerState,
     #[serde(default)]
     pub schedule: Schedule,
+    #[serde(default)]
+    pub settings: AppSettings,
 }
 
 impl Default for AppState {
@@ -29,6 +31,7 @@ impl Default for AppState {
             blocks: BlocksState::default(),
             block_timer: BlockTimerState::default(),
             schedule: Schedule::default(),
+            settings: AppSettings::default(),
         }
     }
 }
@@ -115,6 +118,42 @@ pub struct Schedule {
     pub weekday_overrides: BTreeMap<u8, String>,
     #[serde(default)]
     pub date_overrides: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct AppSettings {
+    #[serde(default)]
+    pub appearance: AppearanceSettings,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct AppearanceSettings {
+    #[serde(default)]
+    pub theme: ThemePreference,
+}
+
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        Self {
+            theme: ThemePreference::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ThemePreference {
+    System,
+    Light,
+    Dark,
+}
+
+impl Default for ThemePreference {
+    fn default() -> Self {
+        Self::System
+    }
 }
 
 fn app_state_version() -> u32 {

@@ -1,10 +1,39 @@
 @import "tailwindcss";
 
+:root {
+  --app-bg: rgb(23 23 23);
+  --app-text: rgb(255 255 255);
+  --app-subtle: rgb(229 229 229);
+  --app-muted: rgb(115 115 115);
+  --app-surface: rgb(38 38 38);
+  --app-surface-2: rgb(23 23 23);
+  --app-border: rgb(255 255 255 / 0.1);
+  --app-hover: rgb(255 255 255 / 0.08);
+  --app-control: rgb(255 255 255);
+  --app-control-text: rgb(10 10 10);
+  --app-focus: rgb(255 255 255 / 0.7);
+}
+
+:root[data-theme="light"] {
+  --app-bg: rgb(245 245 245);
+  --app-text: rgb(23 23 23);
+  --app-subtle: rgb(64 64 64);
+  --app-muted: rgb(115 115 115);
+  --app-surface: rgb(255 255 255);
+  --app-surface-2: rgb(245 245 245);
+  --app-border: rgb(23 23 23 / 0.12);
+  --app-hover: rgb(23 23 23 / 0.06);
+  --app-control: rgb(23 23 23);
+  --app-control-text: rgb(255 255 255);
+  --app-focus: rgb(23 23 23 / 0.35);
+}
+
 html,
 body,
 #root {
   min-height: 100%;
-  background: rgb(23 23 23);
+  background: var(--app-bg);
+  color: var(--app-text);
 }
 
 /* Animation for dropdown menus */

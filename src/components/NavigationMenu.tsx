@@ -29,14 +29,14 @@ export function NavigationMenu({
             type="button"
             onClick={() => onPageChange(item.id)}
             aria-current={isSelected ? "page" : undefined}
-            className={`group relative flex h-16 w-full cursor-pointer items-center pl-5 text-left font-bold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:h-20 sm:pl-7 ${
+            className={`group relative flex h-16 w-full cursor-pointer items-center pl-5 text-left font-bold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus)] sm:h-20 sm:pl-7 ${
               isSelected
-                ? "text-4xl text-white sm:text-6xl"
-                : "text-xl text-neutral-500 hover:text-neutral-300 sm:text-3xl"
+                ? "text-4xl text-[var(--app-text)] sm:text-6xl"
+                : "text-xl text-[var(--app-muted)] hover:text-[var(--app-subtle)] sm:text-3xl"
             }`}
           >
             <span
-              className={`absolute left-0 top-1/2 h-10 w-1 -translate-y-1/2 rounded-full bg-white transition-opacity duration-200 sm:h-14 ${
+              className={`absolute left-0 top-1/2 h-10 w-1 -translate-y-1/2 rounded-full bg-[var(--app-text)] transition-opacity duration-200 sm:h-14 ${
                 isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-40"
               }`}
               aria-hidden="true"

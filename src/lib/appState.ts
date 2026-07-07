@@ -19,6 +19,18 @@ export interface AppState {
   blocks: BlocksState;
   blockTimer: BlockTimerState;
   schedule: LogOffSchedule;
+  settings: AppSettings;
+}
+
+export type ThemePreference = "system" | "light" | "dark";
+export type ResolvedTheme = "light" | "dark";
+
+export interface AppSettings {
+  appearance: AppearanceSettings;
+}
+
+export interface AppearanceSettings {
+  theme: ThemePreference;
 }
 
 export interface BlocksState {
@@ -67,6 +79,7 @@ export function createDefaultAppState(): AppState {
     blocks: createDefaultBlocksState(),
     blockTimer: createDefaultBlockTimerState(),
     schedule: createDefaultSchedule(),
+    settings: createDefaultSettings(),
   };
 }
 
@@ -99,6 +112,14 @@ export function createDefaultSchedule(): LogOffSchedule {
   };
 }
 
+export function createDefaultSettings(): AppSettings {
+  return {
+    appearance: {
+      theme: "system",
+    },
+  };
+}
+
 export function normalizeAppState(value: unknown): AppState {
   const record = asRecord(value);
 
@@ -107,6 +128,7 @@ export function normalizeAppState(value: unknown): AppState {
     blocks: normalizeBlocksState(record?.blocks),
     blockTimer: normalizeBlockTimerState(record?.blockTimer),
     schedule: normalizeSchedule(record?.schedule),
+    settings: normalizeSettings(record?.settings),
   };
 }
 
@@ -252,6 +274,26 @@ function normalizeSchedule(value: unknown): LogOffSchedule {
   };
 }
 
+function normalizeSettings(value: unknown): AppSettings {
+  const defaults = createDefaultSettings();
+  const record = asRecord(value);
+  if (!record) return defaults;
+
+  return {
+    appearance: normalizeAppearanceSettings(record.appearance),
+  };
+}
+
+function normalizeAppearanceSettings(value: unknown): AppearanceSettings {
+  const defaults = createDefaultSettings().appearance;
+  const record = asRecord(value);
+  if (!record) return defaults;
+
+  return {
+    theme: themePreferenceOr(record.theme, defaults.theme),
+  };
+}
+
 function normalizeWeekdayOverrides(value: unknown): LogOffSchedule["weekdayOverrides"] {
   const record = asRecord(value);
   if (!record) return {};
@@ -357,6 +399,15 @@ function nullableExistingId(value: unknown, allowedIds: Set<number>) {
 function validIsoDateOrNull(value: unknown) {
   if (typeof value !== "string") return null;
   return Number.isNaN(Date.parse(value)) ? null : value;
+}
+
+function themePreferenceOr(
+  value: unknown,
+  fallback: ThemePreference,
+): ThemePreference {
+  return value === "system" || value === "light" || value === "dark"
+    ? value
+    : fallback;
 }
 
 function isCompletionTone(value: unknown): value is CompletionTone {

@@ -18,8 +18,11 @@ import {
   loadAppState,
   saveAppState,
   type AppState,
+  type AppSettings,
   type BlocksState,
   type BlockTimerState,
+  type ResolvedTheme,
+  type ThemePreference,
 } from "./lib/appState";
 import {
   resolveNextLogOffDate,
@@ -28,11 +31,31 @@ import {
 import { Settings } from "./Settings";
 
 const APP_STATE_SAVE_DEBOUNCE_MS = 500;
+const SYSTEM_DARK_MODE_QUERY = "(prefers-color-scheme: dark)";
 
 function applyStateUpdate<T>(current: T, update: SetStateAction<T>) {
   return typeof update === "function"
     ? (update as (current: T) => T)(current)
     : update;
+}
+
+function systemPrefersDarkMode() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia(SYSTEM_DARK_MODE_QUERY).matches
+  );
+}
+
+function resolveTheme(
+  theme: ThemePreference,
+  systemPrefersDark: boolean,
+): ResolvedTheme {
+  if (theme === "system") {
+    return systemPrefersDark ? "dark" : "light";
+  }
+
+  return theme;
 }
 
 function BlocksPage({
@@ -79,10 +102,17 @@ function App() {
   const [appState, setAppState] = useState<AppState>(createDefaultAppState);
   const [appStateLoaded, setAppStateLoaded] = useState(false);
   const [resolutionNow, setResolutionNow] = useState(() => new Date());
+  const [systemPrefersDark, setSystemPrefersDark] = useState(
+    systemPrefersDarkMode,
+  );
 
   const targetLogOffAt = useMemo(
     () => resolveNextLogOffDate(appState.schedule, resolutionNow),
     [appState.schedule, resolutionNow],
+  );
+  const resolvedTheme = useMemo(
+    () => resolveTheme(appState.settings.appearance.theme, systemPrefersDark),
+    [appState.settings.appearance.theme, systemPrefersDark],
   );
 
   const setBlocksState = useCallback<Dispatch<SetStateAction<BlocksState>>>(
@@ -113,6 +143,16 @@ function App() {
       schedule,
     }));
   }, []);
+
+  const setAppSettings = useCallback<Dispatch<SetStateAction<AppSettings>>>(
+    (update) => {
+      setAppState((previous) => ({
+        ...previous,
+        settings: applyStateUpdate(previous.settings, update),
+      }));
+    },
+    [],
+  );
 
   const resetAppState = useCallback(() => {
     setCurrentPage("blocks");
@@ -162,8 +202,26 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+
+    const mediaQuery = window.matchMedia(SYSTEM_DARK_MODE_QUERY);
+    const updateSystemTheme = () => setSystemPrefersDark(mediaQuery.matches);
+
+    updateSystemTheme();
+    mediaQuery.addEventListener("change", updateSystemTheme);
+    return () => mediaQuery.removeEventListener("change", updateSystemTheme);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = resolvedTheme;
+  }, [resolvedTheme]);
+
   return (
-    <main className="min-h-screen bg-neutral-900 text-white">
+    <main
+      className="min-h-screen bg-[var(--app-bg)] text-[var(--app-text)] transition-colors"
+      data-theme={resolvedTheme}
+    >
       <NavigationMenu
         currentPage={currentPage}
         onPageChange={setCurrentPage}
@@ -187,7 +245,12 @@ function App() {
             onLogOffScheduleSave={setScheduleState}
           />
         )}
-        {currentPage === "settings" && <Settings />}
+        {currentPage === "settings" && (
+          <Settings
+            settings={appState.settings}
+            onSettingsChange={setAppSettings}
+          />
+        )}
       </div>
     </main>
   );
