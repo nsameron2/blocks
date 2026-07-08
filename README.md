@@ -1,6 +1,8 @@
 # Blocks
 
-A desktop time management app built to keep you productive. Pick the time you want to log off, then split the hours until then into **blocks**: chunks of your remaining time, each with its own budget, that count down as you work. Set specific goals or time limits for different tasks throughout your day. Hit your goals and break bad habits with Blocks.
+A desktop time management app built to always keep you productive. Pick the time you want to log off, then split the hours until then into **blocks**: chunks of your remaining time, each with its own budget, that count down as you work. Set specific goals or time limits for different tasks throughout your day, so there's no space for meandering.
+
+ Hit your goals and break bad habits with Blocks.
 
 Built with [Tauri 2](https://tauri.app), React 19, TypeScript, and Tailwind CSS 4.
 
@@ -73,5 +75,3 @@ src-tauri/
   src/app_state.rs      # Persisted state (JSON in the app data dir)
   src/notifications.rs  # Notification permission + delivery
 ```
-
-App state is persisted as JSON in Tauri's app data directory and normalized on load, so a hand-edited or outdated state file degrades to defaults instead of crashing.
