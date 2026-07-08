@@ -45,7 +45,6 @@ const QUICK_OFFSETS = [
   { label: "1h", minutes: 60 },
   { label: "90m", minutes: 90 },
   { label: "2h", minutes: 120 },
-  { label: "1d", minutes: 1440 }
 ];
 const TIME_BUTTON_CLASS =
   "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[var(--app-subtle)] transition-colors hover:bg-[var(--app-hover)] focus:outline-none";
@@ -333,7 +332,7 @@ export function Timer({
       const currentTarget =
         prev.at > current ? prev.at : clockState(prev.at, current, timeFormat).at;
 
-      return exactClockState(addMinutes(currentTarget, minutes), timeFormat);
+      return clockState(addMinutes(currentTarget, minutes), current, timeFormat);
     });
   }
 
@@ -359,8 +358,7 @@ export function Timer({
             }
           : { minutes: value },
       );
-      const next =
-        at > new Date() ? exactClockState(at, timeFormat) : clockState(at, new Date(), timeFormat);
+      const next = clockState(at, new Date(), timeFormat);
 
       return raw === value ? { ...next, [part]: text } : next;
     });
@@ -380,7 +378,7 @@ export function Timer({
         prev.at > current ? prev.at : clockState(prev.at, current, timeFormat).at;
       const shifted = addMinutes(currentTarget, minutes);
       return shifted > current
-        ? exactClockState(shifted, timeFormat)
+        ? clockState(shifted, current, timeFormat)
         : prev;
     });
   }
@@ -601,7 +599,7 @@ export function Timer({
                   type="button"
                   onClick={() =>
                     setClock((prev) =>
-                      exactClockState(addHours(prev.at, 12), timeFormat),
+                      clockState(addHours(prev.at, 12), new Date(), timeFormat),
                     )
                   }
                   className="cursor-pointer rounded-md bg-[var(--app-secondary-control)] text-lg font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] sm:text-2xl"
@@ -612,7 +610,7 @@ export function Timer({
               )}
             </div>
 
-            <div className="mt-4 grid grid-cols-5 gap-2">
+            <div className="mt-4 grid grid-cols-4 gap-2">
               {QUICK_OFFSETS.map((offset) => (
                 <QuickOffset
                   key={offset.label}
