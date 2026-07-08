@@ -34,6 +34,18 @@ export async function sendBlockCompletionNotification(
   });
 }
 
+export async function sendTimerCompletionNotification() {
+  if (!isTauriRuntime()) return;
+
+  const canNotify = await ensureNotificationPermission();
+  if (!canNotify) return;
+
+  await sendSystemNotification({
+    title: "Timer complete",
+    body: "Time to log off!",
+  });
+}
+
 export async function notificationPermissionState() {
   if (!isTauriRuntime()) {
     return {

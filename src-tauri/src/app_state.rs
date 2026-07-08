@@ -191,6 +191,8 @@ pub struct CompletionSoundSettings {
     pub bad: String,
     #[serde(default = "default_neutral_completion_sound")]
     pub neutral: String,
+    #[serde(default = "default_timer_completion_sound")]
+    pub timer: String,
 }
 
 impl Default for CompletionSoundSettings {
@@ -199,6 +201,7 @@ impl Default for CompletionSoundSettings {
             good: default_good_completion_sound(),
             bad: default_bad_completion_sound(),
             neutral: default_neutral_completion_sound(),
+            timer: default_timer_completion_sound(),
         }
     }
 }
@@ -299,6 +302,10 @@ fn default_bad_completion_sound() -> String {
 
 fn default_neutral_completion_sound() -> String {
     "neutral".to_string()
+}
+
+fn default_timer_completion_sound() -> String {
+    "timer".to_string()
 }
 
 fn default_blocks() -> Vec<Block> {

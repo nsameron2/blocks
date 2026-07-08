@@ -11,6 +11,10 @@ const DEFAULT_BLOCK_ID = 1;
 const DEFAULT_NEXT_BLOCK_ID = 2;
 const DEFAULT_NEXT_PRESET_ID = 1;
 const COMPLETION_TONES: CompletionTone[] = ["good", "bad", "neutral"];
+const BUILT_IN_COMPLETION_SOUNDS: BuiltInCompletionSound[] = [
+  ...COMPLETION_TONES,
+  "timer",
+];
 const CUSTOM_SOUND_ID_PREFIX = "custom:";
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -27,8 +31,12 @@ export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
 export type TimeFormatPreference = "12h" | "24h";
 export type CustomCompletionSound = `${typeof CUSTOM_SOUND_ID_PREFIX}${string}`;
-export type CompletionSound = CompletionTone | CustomCompletionSound;
-export type CompletionSoundSettings = Record<CompletionTone, CompletionSound>;
+export type BuiltInCompletionSound = CompletionTone | "timer";
+export type CompletionSound = BuiltInCompletionSound | CustomCompletionSound;
+export type CompletionSoundSettings = Record<
+  BuiltInCompletionSound,
+  CompletionSound
+>;
 
 export interface AppSettings {
   appearance: AppearanceSettings;
@@ -149,6 +157,7 @@ export function createDefaultSettings(): AppSettings {
         good: "good",
         bad: "bad",
         neutral: "neutral",
+        timer: "timer",
       },
       customSounds: [],
     },
@@ -374,6 +383,7 @@ function normalizeCompletionSoundSettings(
     good: completionSoundOr(record.good, defaults.good, customSoundIds),
     bad: completionSoundOr(record.bad, defaults.bad, customSoundIds),
     neutral: completionSoundOr(record.neutral, defaults.neutral, customSoundIds),
+    timer: completionSoundOr(record.timer, defaults.timer, customSoundIds),
   };
 }
 
@@ -538,12 +548,21 @@ function completionSoundOr(
   fallback: CompletionSound,
   customSoundIds: Set<CustomCompletionSound>,
 ): CompletionSound {
-  if (isCompletionTone(value)) return value;
+  if (isBuiltInCompletionSound(value)) return value;
   if (isCustomCompletionSoundId(value) && customSoundIds.has(value)) {
     return value;
   }
 
   return fallback;
+}
+
+export function isBuiltInCompletionSound(
+  value: unknown,
+): value is BuiltInCompletionSound {
+  return (
+    typeof value === "string" &&
+    BUILT_IN_COMPLETION_SOUNDS.includes(value as BuiltInCompletionSound)
+  );
 }
 
 function isCompletionTone(value: unknown): value is CompletionTone {

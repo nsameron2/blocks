@@ -100,6 +100,9 @@ function BlocksPage({
         totalAllocationPercent={totalAllocationPercent}
         targetLogOffAt={targetLogOffAt}
         timeFormat={timeFormat}
+        notificationVolume={notificationVolume}
+        completionSounds={completionSounds}
+        customSounds={customSounds}
       />
       <BlockManager
         blocksState={blocksState}

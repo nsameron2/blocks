@@ -29,7 +29,14 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
-import type { BlockTimerState, TimeFormatPreference } from "../lib/appState";
+import type {
+  BlockTimerState,
+  CompletionSoundSettings,
+  CustomSound,
+  TimeFormatPreference,
+} from "../lib/appState";
+import { completionSoundSource } from "../lib/completionSounds";
+import { sendTimerCompletionNotification } from "../lib/notifications";
 
 const MINUTE_STEP = 5;
 const DEFAULT_OFFSET_MINUTES = 90;
@@ -282,6 +289,9 @@ export function Timer({
   totalAllocationPercent,
   targetLogOffAt,
   timeFormat,
+  notificationVolume,
+  completionSounds,
+  customSounds,
 }: {
   state: BlockTimerState;
   onStateChange: Dispatch<SetStateAction<BlockTimerState>>;
@@ -289,11 +299,16 @@ export function Timer({
   totalAllocationPercent: number;
   targetLogOffAt?: Date | null;
   timeFormat: TimeFormatPreference;
+  notificationVolume: number;
+  completionSounds: CompletionSoundSettings;
+  customSounds: CustomSound[];
 }) {
   const targetLogOffAtMs = targetLogOffAt?.getTime() ?? null;
   const stateTargetAt = dateFromIso(state.targetAt);
   const stateTargetAtMs = stateTargetAt?.getTime() ?? null;
   const previousTargetLogOffAtMsRef = useRef<number | null>(targetLogOffAtMs);
+  const completionAudioRef = useRef<Record<string, HTMLAudioElement>>({});
+  const wasStartedRef = useRef(state.started);
   const [clock, setClock] = useState<ClockState>(() => {
     if (stateTargetAt) return clockStateFromTarget(stateTargetAt, new Date(), timeFormat);
     return targetLogOffAt
@@ -387,6 +402,23 @@ export function Timer({
     setNow(current);
     setClock(defaultClock(current, timeFormat));
     onAppReset();
+  }
+
+  function playCompletionSound() {
+    const volume = Math.max(0, Math.min(1, notificationVolume / 100));
+    if (volume === 0) return;
+
+    const sound = completionSounds.timer ?? "timer";
+    const source =
+      completionSoundSource(sound, customSounds) ??
+      completionSoundSource("timer", customSounds);
+    if (!source) return;
+
+    const audio = completionAudioRef.current[sound] ?? new Audio(source);
+    completionAudioRef.current[sound] = audio;
+    audio.volume = volume;
+    audio.currentTime = 0;
+    void audio.play().catch(() => undefined);
   }
 
   function start() {
@@ -492,6 +524,26 @@ export function Timer({
     }, 1000);
     return () => clearInterval(timer);
   }, [onStateChange, started]);
+
+  useEffect(() => {
+    const wasStarted = wasStartedRef.current;
+    wasStartedRef.current = started;
+
+    // A reset zeroes totalDurationMs in the same update it stops the timer,
+    // so a stop with a duration still set can only be the countdown finishing.
+    if (!wasStarted || started || state.totalDurationMs === 0) return;
+
+    playCompletionSound();
+    void sendTimerCompletionNotification().catch((error) => {
+      console.error("Failed to send timer completion notification", error);
+    });
+  }, [
+    completionSounds,
+    customSounds,
+    notificationVolume,
+    started,
+    state.totalDurationMs,
+  ]);
 
   return (
     <section className="mx-auto mt-8 w-full max-w-xl px-6 text-[var(--app-text)]">

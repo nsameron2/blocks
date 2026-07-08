@@ -8,6 +8,7 @@ import {
 import { Monitor, Moon, Sun, Upload } from "lucide-react";
 import type {
   AppSettings,
+  BuiltInCompletionSound,
   CompletionSound,
   CustomCompletionSound,
   CustomSound,
@@ -15,7 +16,6 @@ import type {
   ThemePreference,
 } from "./lib/appState";
 import { completionSoundSource } from "./lib/completionSounds";
-import type { CompletionTone } from "./lib/types";
 
 const THEME_OPTIONS: {
   value: ThemePreference;
@@ -31,12 +31,17 @@ const SOUND_OPTIONS: { value: CompletionSound; label: string }[] = [
   { value: "good", label: "Complete" },
   { value: "bad", label: "Alarm beep" },
   { value: "neutral", label: "Chime" },
+  { value: "timer", label: "Log off" },
 ];
 
-const COMPLETION_SOUND_ROWS: { tone: CompletionTone; label: string }[] = [
+const COMPLETION_SOUND_ROWS: {
+  tone: BuiltInCompletionSound;
+  label: string;
+}[] = [
   { tone: "good", label: "Good" },
   { tone: "bad", label: "Bad" },
   { tone: "neutral", label: "Neutral" },
+  { tone: "timer", label: "Timer" },
 ];
 
 const TIME_FORMAT_OPTIONS: { value: TimeFormatPreference; label: string }[] = [
@@ -144,7 +149,10 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
     updateNotificationVolume(Number(value));
   }
 
-  function updateCompletionSound(tone: CompletionTone, sound: CompletionSound) {
+  function updateCompletionSound(
+    tone: BuiltInCompletionSound,
+    sound: CompletionSound,
+  ) {
     onSettingsChange((previous) => ({
       ...previous,
       sound: {
@@ -197,7 +205,7 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
   }
 
   function handleCompletionSoundChange(
-    tone: CompletionTone,
+    tone: BuiltInCompletionSound,
     sound: CompletionSound,
   ) {
     updateCompletionSound(tone, sound);
@@ -356,7 +364,7 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
                     Upload
                   </button>
                 </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {COMPLETION_SOUND_ROWS.map(({ tone, label }) => (
                     <label
                       key={tone}
