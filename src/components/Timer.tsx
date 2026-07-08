@@ -546,7 +546,7 @@ export function Timer({
             {overtime && (
               <div
                 className="pointer-events-none absolute inset-0 rounded-md transition-shadow duration-[1800ms] ease-out"
-                style={{ boxShadow: "0 0 0 4px rgb(255 255 255)" }}
+                style={{ boxShadow: "0 0 0 4px rgb(156 163 175)" }}
                 aria-hidden="true"
               />
             )}
