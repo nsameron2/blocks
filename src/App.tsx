@@ -7,7 +7,7 @@ import {
   type SetStateAction,
 } from "react";
 import { Schedule } from "./Schedule";
-import { Schedule as BlockSchedule } from "./components/Schedule";
+import { Timer } from "./components/Timer";
 import { BlockManager } from "./components/BlockManager";
 import {
   NavigationMenu,
@@ -93,7 +93,7 @@ function BlocksPage({
 
   return (
     <section className="flow-root min-h-screen pb-32 pt-8">
-      <BlockSchedule
+      <Timer
         state={blockTimerState}
         onStateChange={onBlockTimerStateChange}
         onAppReset={onAppReset}

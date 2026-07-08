@@ -275,7 +275,7 @@ function AppResetButton({ onReset }: { onReset: () => void }) {
   );
 }
 
-export function Schedule({
+export function Timer({
   state,
   onStateChange,
   onAppReset,
