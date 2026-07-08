@@ -7,7 +7,7 @@ import {
   type SetStateAction,
 } from "react";
 import confetti from "canvas-confetti";
-import { ChevronDown, RefreshCw, Save } from "lucide-react";
+import { ChevronDown, RefreshCw, Save, Trash2 } from "lucide-react";
 import {
   createDefaultBlocksState,
   type BlocksState,
@@ -398,6 +398,16 @@ export function BlockManager({
     setPresetName(trimmedName);
   }
 
+  function deletePreset(presetId: number) {
+    onBlocksStateChange((previous) => ({
+      ...previous,
+      presets: previous.presets.filter((preset) => preset.id !== presetId),
+    }));
+    if (selectedPresetId === String(presetId)) {
+      setSelectedPresetId("");
+    }
+  }
+
   function loadPreset(presetId: string) {
     setSelectedPresetId(presetId);
     const preset = presets.find((item) => String(item.id) === presetId);
@@ -473,18 +483,35 @@ export function BlockManager({
                     </div>
                   ) : (
                     presets.map((preset) => (
-                      <button
+                      <div
                         key={preset.id}
-                        type="button"
-                        onClick={() => loadPreset(String(preset.id))}
-                        className={`block w-full cursor-pointer rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                        className={`group relative rounded-md transition-colors ${
                           selectedPresetId === String(preset.id)
-                            ? "bg-[var(--app-hover)] text-[var(--app-text)]"
-                            : "text-[var(--app-subtle)] hover:bg-[var(--app-hover)] hover:text-[var(--app-text)]"
+                            ? "bg-[var(--app-hover)]"
+                            : "hover:bg-[var(--app-hover)]"
                         }`}
                       >
-                        {preset.name}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => loadPreset(String(preset.id))}
+                          className={`block w-full cursor-pointer rounded-md px-2 py-1.5 pr-8 text-left text-sm transition-colors ${
+                            selectedPresetId === String(preset.id)
+                              ? "text-[var(--app-text)]"
+                              : "text-[var(--app-subtle)] group-hover:text-[var(--app-text)]"
+                          }`}
+                        >
+                          {preset.name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deletePreset(preset.id)}
+                          className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-red-400 opacity-0 transition-opacity hover:text-red-500 focus-visible:opacity-100 group-hover:opacity-100"
+                          aria-label={`Delete preset ${preset.name}`}
+                          title="Delete preset"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     ))
                   )}
                 </div>
