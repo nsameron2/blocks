@@ -496,11 +496,11 @@ export function Timer({
   return (
     <section className="mx-auto mt-8 w-full max-w-xl px-6 text-[var(--app-text)]">
       {started ? (
-        <div className="relative">
+        <div className="group relative">
           <div className="flex h-24 w-full items-center justify-center rounded-md bg-[var(--app-surface)] px-6 font-mono text-5xl font-bold tabular-nums tracking-wider text-[var(--app-text)] ring-1 ring-[var(--app-border)] sm:text-6xl">
             {countdown(remaining)}
           </div>
-          <div className="mt-3 flex justify-end gap-2 sm:absolute sm:left-full sm:top-0 sm:ml-3 sm:mt-0 sm:flex-col">
+          <div className="mt-3 flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 sm:absolute sm:left-full sm:top-0 sm:ml-3 sm:mt-0 sm:flex-col">
             <TimerResetButton onReset={reset} />
             <AppResetButton onReset={resetApp} />
           </div>
@@ -514,61 +514,56 @@ export function Timer({
             </p>
           </div>
 
-          <div className="relative">
-            <div className="rounded-lg bg-[var(--app-surface)] p-4 shadow-2xl shadow-[var(--app-shadow)] ring-1 ring-[var(--app-border)]">
-              <div
-                className={`grid items-stretch gap-3 sm:gap-4 ${
-                  timeFormat === "12h"
-                    ? "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_58px] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_72px]"
-                    : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
-                }`}
-              >
-                <TimeField
-                  label="hour"
-                  value={clock.hour}
-                  step={60}
-                  onChange={(value) => edit("hour", value)}
-                  onShift={shift}
-                />
-                <div className="flex items-center pb-7 font-mono text-3xl font-bold text-[var(--app-muted)] sm:text-5xl">
-                  :
-                </div>
-                <TimeField
-                  label="min"
-                  value={clock.minute}
-                  step={MINUTE_STEP}
-                  onChange={(value) => edit("minute", value)}
-                  onShift={shift}
-                />
-                {timeFormat === "12h" && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setClock((prev) =>
-                        exactClockState(addHours(prev.at, 12), timeFormat),
-                      )
-                    }
-                    className="cursor-pointer rounded-md bg-[var(--app-secondary-control)] text-lg font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] sm:text-2xl"
-                    aria-label={`Switch to ${format(clock.at, "a") === "AM" ? "PM" : "AM"}`}
-                  >
-                    {format(clock.at, "a")}
-                  </button>
-                )}
+          <div className="rounded-lg bg-[var(--app-surface)] p-4 shadow-2xl shadow-[var(--app-shadow)] ring-1 ring-[var(--app-border)]">
+            <div
+              className={`grid items-stretch gap-3 sm:gap-4 ${
+                timeFormat === "12h"
+                  ? "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_58px] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_72px]"
+                  : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
+              }`}
+            >
+              <TimeField
+                label="hour"
+                value={clock.hour}
+                step={60}
+                onChange={(value) => edit("hour", value)}
+                onShift={shift}
+              />
+              <div className="flex items-center pb-7 font-mono text-3xl font-bold text-[var(--app-muted)] sm:text-5xl">
+                :
               </div>
-
-              <div className="mt-4 grid grid-cols-5 gap-2">
-                {QUICK_OFFSETS.map((offset) => (
-                  <QuickOffset
-                    key={offset.label}
-                    {...offset}
-                    canShift={canQuickShift}
-                    onShift={quickShift}
-                  />
-                ))}
-              </div>
+              <TimeField
+                label="min"
+                value={clock.minute}
+                step={MINUTE_STEP}
+                onChange={(value) => edit("minute", value)}
+                onShift={shift}
+              />
+              {timeFormat === "12h" && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setClock((prev) =>
+                      exactClockState(addHours(prev.at, 12), timeFormat),
+                    )
+                  }
+                  className="cursor-pointer rounded-md bg-[var(--app-secondary-control)] text-lg font-bold text-[var(--app-text)] ring-1 ring-[var(--app-border)] transition-colors hover:bg-[var(--app-secondary-control-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)] sm:text-2xl"
+                  aria-label={`Switch to ${format(clock.at, "a") === "AM" ? "PM" : "AM"}`}
+                >
+                  {format(clock.at, "a")}
+                </button>
+              )}
             </div>
-            <div className="mt-3 flex justify-end sm:absolute sm:left-full sm:top-0 sm:ml-3 sm:mt-0">
-              <AppResetButton onReset={resetApp} />
+
+            <div className="mt-4 grid grid-cols-5 gap-2">
+              {QUICK_OFFSETS.map((offset) => (
+                <QuickOffset
+                  key={offset.label}
+                  {...offset}
+                  canShift={canQuickShift}
+                  onShift={quickShift}
+                />
+              ))}
             </div>
           </div>
 
