@@ -296,11 +296,11 @@ function normalizeBlockTimerState(value: unknown): BlockTimerState {
     };
   }
 
-  const remainingMs = Math.max(0, Date.parse(targetAt) - Date.now());
+  const remainingMs = Date.parse(targetAt) - Date.now();
 
   return {
     targetAt,
-    started: remainingMs > 0,
+    started: true,
     totalDurationMs: Math.max(totalDurationMs, remainingMs),
     remainingMs,
   };

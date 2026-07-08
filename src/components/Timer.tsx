@@ -125,11 +125,13 @@ function dateFromIso(value: string | null) {
 }
 
 function countdown(ms: number) {
-  const total = Math.max(0, Math.floor(ms / 1000));
+  const sign = ms < 0 ? "-" : "";
+  const total =
+    ms < 0 ? Math.ceil(Math.abs(ms) / 1000) : Math.floor(ms / 1000);
   const h = Math.floor(total / 3600);
   const m = Math.floor(total / 60) % 60;
   const s = total % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${sign}${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 function targetLabel(
@@ -308,7 +310,7 @@ export function Timer({
   const stateTargetAtMs = stateTargetAt?.getTime() ?? null;
   const previousTargetLogOffAtMsRef = useRef<number | null>(targetLogOffAtMs);
   const completionAudioRef = useRef<Record<string, HTMLAudioElement>>({});
-  const wasStartedRef = useRef(state.started);
+  const overtimeNotifiedRef = useRef(state.started && state.remainingMs <= 0);
   const [clock, setClock] = useState<ClockState>(() => {
     if (stateTargetAt) return clockStateFromTarget(stateTargetAt, new Date(), timeFormat);
     return targetLogOffAt
@@ -320,6 +322,7 @@ export function Timer({
   const remaining = state.remainingMs;
 
   const allocationComplete = totalAllocationPercent === 100;
+  const overtime = started && remaining <= 0;
   const targetAt =
     clock.at > now ? clock.at : clockState(clock.at, now, timeFormat).at;
   const targetAtIso = targetAt.toISOString();
@@ -502,18 +505,14 @@ export function Timer({
       onStateChange((previous) => {
         const targetAt = dateFromIso(previous.targetAt);
         const remainingMs = targetAt
-          ? Math.max(0, differenceInMilliseconds(targetAt, new Date()))
-          : Math.max(0, previous.remainingMs - 1000);
-        const nextStarted = remainingMs > 0;
+          ? differenceInMilliseconds(targetAt, new Date())
+          : previous.remainingMs - 1000;
 
-        if (
-          previous.remainingMs === remainingMs &&
-          previous.started === nextStarted
-        ) {
+        if (previous.remainingMs === remainingMs) {
           return previous;
         }
 
-        return { ...previous, started: nextStarted, remainingMs };
+        return { ...previous, remainingMs };
       });
     }
 
@@ -526,33 +525,39 @@ export function Timer({
   }, [onStateChange, started]);
 
   useEffect(() => {
-    const wasStarted = wasStartedRef.current;
-    wasStartedRef.current = started;
+    if (!started) {
+      overtimeNotifiedRef.current = false;
+      return;
+    }
 
-    // A reset zeroes totalDurationMs in the same update it stops the timer,
-    // so a stop with a duration still set can only be the countdown finishing.
-    if (!wasStarted || started || state.totalDurationMs === 0) return;
+    if (remaining > 0 || overtimeNotifiedRef.current) return;
 
+    overtimeNotifiedRef.current = true;
     playCompletionSound();
     void sendTimerCompletionNotification().catch((error) => {
       console.error("Failed to send timer completion notification", error);
     });
-  }, [
-    completionSounds,
-    customSounds,
-    notificationVolume,
-    started,
-    state.totalDurationMs,
-  ]);
+  }, [completionSounds, customSounds, notificationVolume, remaining, started]);
 
   return (
     <section className="mx-auto mt-8 w-full max-w-xl px-6 text-[var(--app-text)]">
       {started ? (
         <div className="group relative">
-          <div className="flex h-24 w-full items-center justify-center rounded-md bg-[var(--app-surface)] px-6 font-mono text-5xl font-bold tabular-nums tracking-wider text-[var(--app-text)] ring-1 ring-[var(--app-border)] sm:text-6xl">
+          <div className="relative flex h-24 w-full items-center justify-center rounded-md bg-[var(--app-surface)] px-6 font-mono text-5xl font-bold tabular-nums tracking-wider text-[var(--app-text)] ring-1 ring-[var(--app-border)] sm:text-6xl">
             {countdown(remaining)}
+            {overtime && (
+              <div
+                className="pointer-events-none absolute inset-0 rounded-md transition-shadow duration-[1800ms] ease-out"
+                style={{ boxShadow: "0 0 0 4px rgb(255 255 255)" }}
+                aria-hidden="true"
+              />
+            )}
           </div>
-          <div className="mt-3 flex justify-end gap-2 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 sm:absolute sm:left-full sm:top-0 sm:ml-3 sm:mt-0 sm:flex-col">
+          <div
+            className={`mt-3 flex justify-end gap-2 transition-opacity focus-within:opacity-100 group-hover:opacity-100 sm:absolute sm:left-full sm:top-0 sm:ml-3 sm:mt-0 sm:flex-col ${
+              overtime ? "opacity-100" : "opacity-0"
+            }`}
+          >
             <TimerResetButton onReset={reset} />
             <AppResetButton onReset={resetApp} />
           </div>

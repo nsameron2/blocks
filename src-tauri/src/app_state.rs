@@ -106,7 +106,7 @@ pub struct BlockTimerState {
     #[serde(default)]
     pub total_duration_ms: u64,
     #[serde(default)]
-    pub remaining_ms: u64,
+    pub remaining_ms: i64,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
