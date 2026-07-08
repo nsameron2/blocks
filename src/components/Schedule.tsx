@@ -26,6 +26,7 @@ import {
   Minus,
   Play,
   Plus,
+  RotateCcw,
   Trash2,
 } from "lucide-react";
 import type { BlockTimerState, TimeFormatPreference } from "../lib/appState";
@@ -246,12 +247,26 @@ function QuickOffset({
   );
 }
 
+function TimerResetButton({ onReset }: { onReset: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onReset}
+      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-[var(--app-text)] transition-colors hover:text-[var(--app-subtle)]"
+      aria-label="Reset timer"
+      title="Reset timer"
+    >
+      <RotateCcw className="h-5 w-5" />
+    </button>
+  );
+}
+
 function AppResetButton({ onReset }: { onReset: () => void }) {
   return (
     <button
       type="button"
       onClick={onReset}
-      className="mt-3 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-red-400 hover:text-red-500 sm:absolute sm:left-full sm:top-0 sm:ml-3 sm:mt-0"
+      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-red-400 hover:text-red-500"
       aria-label="Reset app"
       title="Reset app"
     >
@@ -485,7 +500,8 @@ export function Schedule({
           <div className="flex h-24 w-full items-center justify-center rounded-md bg-[var(--app-surface)] px-6 font-mono text-5xl font-bold tabular-nums tracking-wider text-[var(--app-text)] ring-1 ring-[var(--app-border)] sm:text-6xl">
             {countdown(remaining)}
           </div>
-          <div className="flex justify-end sm:block">
+          <div className="mt-3 flex justify-end gap-2 sm:absolute sm:left-full sm:top-0 sm:ml-3 sm:mt-0 sm:flex-col">
+            <TimerResetButton onReset={reset} />
             <AppResetButton onReset={resetApp} />
           </div>
         </div>
@@ -551,7 +567,7 @@ export function Schedule({
                 ))}
               </div>
             </div>
-            <div className="flex justify-end sm:block">
+            <div className="mt-3 flex justify-end sm:absolute sm:left-full sm:top-0 sm:ml-3 sm:mt-0">
               <AppResetButton onReset={resetApp} />
             </div>
           </div>
