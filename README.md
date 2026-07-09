@@ -11,7 +11,7 @@ A desktop time management app built to always keep you productive. Pick the time
 Built with [Tauri 2](https://tauri.app), React 19, TypeScript, and Tailwind CSS 4.
 
 <p align="center">
-  <img src="src/assets/images/screenshot.png" alt="Blocks with a running timer and five blocks dividing the remaining time" width="480" />
+  <img src="src/assets/images/screenshot.png" alt="Blocks with a running timer and five blocks dividing the remaining time" width="1000" />
 </p>
 
 ## How it works
