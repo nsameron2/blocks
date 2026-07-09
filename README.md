@@ -1,4 +1,8 @@
-# Blocks
+<p align="center">
+  <img src="src/assets/images/logo.png" alt="Blocks logo" width="120" />
+</p>
+
+<h1 align="center">Blocks</h1>
 
 A desktop time management app built to always keep you productive. Pick the time you want to log off, then split the hours until then into **blocks**: chunks of your remaining time, each with its own budget, that count down as you work. Set specific goals or time limits for different tasks throughout your day, so there's no space for meandering.
 
