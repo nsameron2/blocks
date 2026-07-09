@@ -91,11 +91,20 @@ function BlocksPage({
     0,
   );
 
+  function resetBlockProgress() {
+    onBlocksStateChange((previous) => ({
+      ...previous,
+      blockSpent: {},
+      completionTones: {},
+    }));
+  }
+
   return (
     <section className="flow-root min-h-screen pb-32 pt-8">
       <Timer
         state={blockTimerState}
         onStateChange={onBlockTimerStateChange}
+        onStart={resetBlockProgress}
         onAppReset={onAppReset}
         totalAllocationPercent={totalAllocationPercent}
         targetLogOffAt={targetLogOffAt}

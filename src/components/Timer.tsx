@@ -286,6 +286,7 @@ function AppResetButton({ onReset }: { onReset: () => void }) {
 export function Timer({
   state,
   onStateChange,
+  onStart,
   onAppReset,
   totalAllocationPercent,
   targetLogOffAt,
@@ -296,6 +297,7 @@ export function Timer({
 }: {
   state: BlockTimerState;
   onStateChange: Dispatch<SetStateAction<BlockTimerState>>;
+  onStart: () => void;
   onAppReset: () => void;
   totalAllocationPercent: number;
   targetLogOffAt?: Date | null;
@@ -430,6 +432,7 @@ export function Timer({
       clock.at > current ? clock.at : clockState(clock.at, current, timeFormat).at;
     const durationMs = differenceInMilliseconds(scheduledAt, current);
 
+    onStart();
     onStateChange({
       targetAt: scheduledAt.toISOString(),
       started: true,
