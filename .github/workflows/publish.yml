@@ -57,6 +57,25 @@ jobs:
       - name: install frontend dependencies
         run: pnpm install --frozen-lockfile
 
+      # Wayland client libs must come from the host system: bundling Ubuntu's
+      # copies into the AppImage breaks EGL init on hosts with newer Mesa
+      # ("Could not create default EGL display: EGL_BAD_PARAMETER").
+      # Tauri reuses a cached linuxdeploy-plugin-gtk.sh, so pre-seed a patched
+      # copy that strips those libs from the AppDir before packaging.
+      - name: patch AppImage bundling to exclude wayland libs (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          mkdir -p ~/.cache/tauri
+          PLUGIN=~/.cache/tauri/linuxdeploy-plugin-gtk.sh
+          curl -fsSL -o "$PLUGIN" https://raw.githubusercontent.com/tauri-apps/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh \
+            || curl -fsSL -o "$PLUGIN" https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh
+          {
+            echo ''
+            echo '# blocks: strip bundled wayland libs; they must match the host or EGL fails'
+            echo 'if [ -n "$APPDIR" ]; then rm -f "$APPDIR"/usr/lib/libwayland-*.so* || true; fi'
+          } >> "$PLUGIN"
+          chmod +x "$PLUGIN"
+
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
