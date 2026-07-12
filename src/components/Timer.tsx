@@ -287,6 +287,7 @@ export function Timer({
   state,
   onStateChange,
   onStart,
+  onReset,
   onAppReset,
   totalAllocationPercent,
   targetLogOffAt,
@@ -298,6 +299,7 @@ export function Timer({
   state: BlockTimerState;
   onStateChange: Dispatch<SetStateAction<BlockTimerState>>;
   onStart: () => void;
+  onReset: () => void;
   onAppReset: () => void;
   totalAllocationPercent: number;
   targetLogOffAt?: Date | null;
@@ -391,6 +393,7 @@ export function Timer({
 
     setNow(current);
     setClock(nextClock);
+    onReset();
     onStateChange({
       targetAt: nextClock.at.toISOString(),
       started: false,
