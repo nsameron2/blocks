@@ -16,6 +16,7 @@ import type {
   ThemePreference,
 } from "./lib/appState";
 import { completionSoundSource } from "./lib/completionSounds";
+import { playSound } from "./lib/soundPlayer";
 
 const THEME_OPTIONS: {
   value: ThemePreference;
@@ -94,7 +95,6 @@ interface SettingsProps {
 }
 
 export function Settings({ settings, onSettingsChange }: SettingsProps) {
-  const previewAudioRef = useRef<Record<string, HTMLAudioElement>>({});
   const customSoundInputRef = useRef<HTMLInputElement>(null);
   const [volumeInput, setVolumeInput] = useState(
     String(settings.sound.notificationVolume),
@@ -181,12 +181,6 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
   }
 
   function previewCompletionSound(sound: CompletionSound) {
-    Object.values(previewAudioRef.current).forEach((audio) => {
-      if (!audio) return;
-      audio.pause();
-      audio.currentTime = 0;
-    });
-
     const volume = Math.max(
       0,
       Math.min(1, settings.sound.notificationVolume / 100),
@@ -196,12 +190,7 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
     const source = completionSoundSource(sound, settings.sound.customSounds);
     if (!source) return;
 
-    const audio =
-      previewAudioRef.current[sound] ?? new Audio(source);
-    previewAudioRef.current[sound] = audio;
-    audio.volume = volume;
-    audio.currentTime = 0;
-    void audio.play().catch(() => undefined);
+    playSound(source, volume);
   }
 
   function handleCompletionSoundChange(

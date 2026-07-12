@@ -17,6 +17,7 @@ import {
 } from "../lib/appState";
 import { completionSoundSource } from "../lib/completionSounds";
 import { sendBlockCompletionNotification } from "../lib/notifications";
+import { playSound } from "../lib/soundPlayer";
 import type { Block as BlockData, CompletionTone } from "../lib/types";
 import { Block } from "./Block";
 import { Muxer } from "./Muxer";
@@ -72,7 +73,6 @@ export function BlockManager({
   } = blocksState;
   const blocksRef = useRef(blocks);
   const completionTonesRef = useRef(completionTones);
-  const completionAudioRef = useRef<Record<string, HTMLAudioElement>>({});
   const blockElementsRef = useRef<Record<number, HTMLDivElement>>({});
   const presetMenuRef = useRef<HTMLDivElement>(null);
   const [presetName, setPresetName] = useState("");
@@ -115,12 +115,7 @@ export function BlockManager({
       completionSoundSource(tone, customSounds);
     if (!source) return;
 
-    const audio =
-      completionAudioRef.current[sound] ?? new Audio(source);
-    completionAudioRef.current[sound] = audio;
-    audio.volume = volume;
-    audio.currentTime = 0;
-    void audio.play().catch(() => undefined);
+    playSound(source, volume);
   }
 
   function fireGoodCompletionConfetti(blockId: number) {

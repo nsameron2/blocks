@@ -37,6 +37,7 @@ import type {
 } from "../lib/appState";
 import { completionSoundSource } from "../lib/completionSounds";
 import { sendTimerCompletionNotification } from "../lib/notifications";
+import { playSound } from "../lib/soundPlayer";
 
 const MINUTE_STEP = 5;
 const DEFAULT_OFFSET_MINUTES = 90;
@@ -312,7 +313,6 @@ export function Timer({
   const stateTargetAt = dateFromIso(state.targetAt);
   const stateTargetAtMs = stateTargetAt?.getTime() ?? null;
   const previousTargetLogOffAtMsRef = useRef<number | null>(targetLogOffAtMs);
-  const completionAudioRef = useRef<Record<string, HTMLAudioElement>>({});
   const overtimeNotifiedRef = useRef(state.started && state.remainingMs <= 0);
   const [clock, setClock] = useState<ClockState>(() => {
     if (stateTargetAt) return clockStateFromTarget(stateTargetAt, new Date(), timeFormat);
@@ -420,11 +420,7 @@ export function Timer({
       completionSoundSource("timer", customSounds);
     if (!source) return;
 
-    const audio = completionAudioRef.current[sound] ?? new Audio(source);
-    completionAudioRef.current[sound] = audio;
-    audio.volume = volume;
-    audio.currentTime = 0;
-    void audio.play().catch(() => undefined);
+    playSound(source, volume);
   }
 
   function start() {
