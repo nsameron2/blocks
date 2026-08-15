@@ -1,4 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+pub mod ai;
 pub mod app_state;
 pub mod audio;
 pub mod notifications;
@@ -17,6 +18,7 @@ pub fn run() {
             greet,
             app_state::load_app_state,
             app_state::save_app_state,
+            ai::request_ai_completion,
             audio::play_sound,
             notifications::notification_permission_state,
             notifications::request_notification_permission,

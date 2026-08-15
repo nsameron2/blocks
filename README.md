@@ -47,6 +47,7 @@ Hit **Start** and the countdown begins:
 
 - **Theme** - Light or dark mode, matching your system by default.
 - **Sounds** - Pick a sound for each block and timer completion, or upload your own.
+- **AI autocomplete** - Optionally configure an OpenAI-compatible Chat Completions endpoint in Settings. After you finish typing a block title, Blocks suggests its emoji, color, and good/bad/neutral status.
 
 ## Development
 
@@ -78,6 +79,7 @@ src/
     appState.ts         # State types, defaults, load/save + normalization
     logOffSchedule.ts   # Schedule resolution (next log-off date)
     completionSounds.ts # Built-in + custom sound resolution
+    blockAutocomplete.ts # AI request schema, response validation, browser fallback
     notifications.ts    # System notifications via Tauri
 src-tauri/
   src/app_state.rs      # Persisted state (JSON in the app data dir)

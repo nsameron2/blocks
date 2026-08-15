@@ -124,11 +124,37 @@ pub struct Schedule {
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     #[serde(default)]
+    pub ai: AiSettings,
+    #[serde(default)]
     pub appearance: AppearanceSettings,
     #[serde(default)]
     pub time: TimeSettings,
     #[serde(default)]
     pub sound: SoundSettings,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct AiSettings {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_ai_url")]
+    pub url: String,
+    #[serde(default)]
+    pub api_key: String,
+    #[serde(default = "default_ai_model")]
+    pub model: String,
+}
+
+impl Default for AiSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            url: default_ai_url(),
+            api_key: String::new(),
+            model: default_ai_model(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -290,6 +316,14 @@ fn default_next_preset_id() -> u32 {
 
 fn default_notification_volume() -> u8 {
     100
+}
+
+fn default_ai_url() -> String {
+    "https://api.openai.com/v1".to_string()
+}
+
+fn default_ai_model() -> String {
+    "gpt-4o-mini".to_string()
 }
 
 fn default_good_completion_sound() -> String {

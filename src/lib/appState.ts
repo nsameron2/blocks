@@ -39,9 +39,17 @@ export type CompletionSoundSettings = Record<
 >;
 
 export interface AppSettings {
+  ai: AISettings;
   appearance: AppearanceSettings;
   time: TimeSettings;
   sound: SoundSettings;
+}
+
+export interface AISettings {
+  enabled: boolean;
+  url: string;
+  apiKey: string;
+  model: string;
 }
 
 export interface AppearanceSettings {
@@ -171,6 +179,12 @@ export function createDefaultSchedule(): LogOffSchedule {
 
 export function createDefaultSettings(): AppSettings {
   return {
+    ai: {
+      enabled: false,
+      url: "https://api.openai.com/v1",
+      apiKey: "",
+      model: "gpt-4o-mini",
+    },
     appearance: {
       theme: "system",
     },
@@ -350,9 +364,24 @@ function normalizeSettings(value: unknown): AppSettings {
   if (!record) return defaults;
 
   return {
+    ai: normalizeAISettings(record.ai),
     appearance: normalizeAppearanceSettings(record.appearance),
     time: normalizeTimeSettings(record.time),
     sound: normalizeSoundSettings(record.sound),
+  };
+}
+
+function normalizeAISettings(value: unknown): AISettings {
+  const defaults = createDefaultSettings().ai;
+  const record = asRecord(value);
+  if (!record) return defaults;
+
+  return {
+    enabled:
+      typeof record.enabled === "boolean" ? record.enabled : defaults.enabled,
+    url: nonEmptyStringOr(record.url, defaults.url),
+    apiKey: stringOr(record.apiKey, defaults.apiKey),
+    model: nonEmptyStringOr(record.model, defaults.model),
   };
 }
 
@@ -533,6 +562,12 @@ function nonNegativeIntegerOr(value: unknown, fallback: number) {
 
 function stringOr(value: unknown, fallback: string) {
   return typeof value === "string" ? value : fallback;
+}
+
+function nonEmptyStringOr(value: unknown, fallback: string) {
+  if (typeof value !== "string") return fallback;
+  const trimmedValue = value.trim();
+  return trimmedValue || fallback;
 }
 
 function timeOrEmpty(value: unknown) {

@@ -5,8 +5,9 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { Monitor, Moon, Sun, Upload } from "lucide-react";
+import { Eye, EyeOff, Monitor, Moon, Sun, Upload } from "lucide-react";
 import type {
+  AISettings,
   AppSettings,
   BuiltInCompletionSound,
   CompletionSound,
@@ -49,6 +50,11 @@ const TIME_FORMAT_OPTIONS: { value: TimeFormatPreference; label: string }[] = [
   { value: "12h", label: "12 hour" },
   { value: "24h", label: "24 hour" },
 ];
+
+const AI_AUTOCOMPLETE_OPTIONS = [
+  { value: false, label: "OFF" },
+  { value: true, label: "ON" },
+] as const;
 
 function createCustomSoundId(): CustomCompletionSound {
   const uniqueId =
@@ -96,6 +102,7 @@ interface SettingsProps {
 
 export function Settings({ settings, onSettingsChange }: SettingsProps) {
   const customSoundInputRef = useRef<HTMLInputElement>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [volumeInput, setVolumeInput] = useState(
     String(settings.sound.notificationVolume),
   );
@@ -110,6 +117,19 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
   useEffect(() => {
     setVolumeInput(String(settings.sound.notificationVolume));
   }, [settings.sound.notificationVolume]);
+
+  function updateAISetting<Key extends keyof AISettings>(
+    key: Key,
+    value: AISettings[Key],
+  ) {
+    onSettingsChange((previous) => ({
+      ...previous,
+      ai: {
+        ...previous.ai,
+        [key]: value,
+      },
+    }));
+  }
 
   function updateTheme(theme: ThemePreference) {
     onSettingsChange((previous) => ({
@@ -212,6 +232,125 @@ export function Settings({ settings, onSettingsChange }: SettingsProps) {
         </h1>
 
         <div className="mx-auto mt-10 w-full max-w-2xl space-y-10">
+          <section>
+            <h2 className="text-xl font-semibold text-[var(--app-subtle)]">
+              AI
+            </h2>
+            <div className="mt-3 overflow-hidden rounded-md bg-[var(--app-surface)] ring-1 ring-[var(--app-border)]">
+              <div className="flex min-h-20 flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-base font-semibold text-[var(--app-subtle)] sm:text-lg">
+                    Block autocomplete
+                  </div>
+                  <p className="mt-1 text-sm text-[var(--app-muted)]">
+                    Suggest an emoji, color, and status from each title.
+                  </p>
+                </div>
+                <div
+                  role="group"
+                  aria-label="Block autocomplete"
+                  className="inline-flex rounded-md bg-[var(--app-surface-2)] p-1 ring-1 ring-[var(--app-border)]"
+                >
+                  {AI_AUTOCOMPLETE_OPTIONS.map(({ value, label }) => {
+                    const isSelected = settings.ai.enabled === value;
+
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => updateAISetting("enabled", value)}
+                        aria-pressed={isSelected}
+                        className={`inline-flex h-10 cursor-pointer items-center justify-center rounded px-3 text-sm font-bold transition-colors ${
+                          isSelected
+                            ? "bg-[var(--app-control)] text-[var(--app-control-text)]"
+                            : "text-[var(--app-muted)] hover:bg-[var(--app-hover)] hover:text-[var(--app-text)]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div
+                className={`space-y-4 border-t border-[var(--app-border)] px-4 py-4 transition-opacity ${
+                  settings.ai.enabled ? "opacity-100" : "opacity-55"
+                }`}
+              >
+                <label className="block" htmlFor="ai-api-url">
+                  <span className="mb-2 block text-sm font-semibold text-[var(--app-muted)]">
+                    API URL
+                  </span>
+                  <input
+                    id="ai-api-url"
+                    aria-label="AI API URL"
+                    type="url"
+                    value={settings.ai.url}
+                    onChange={(event) =>
+                      updateAISetting("url", event.target.value)
+                    }
+                    placeholder="https://openrouter.ai/api/v1"
+                    spellCheck={false}
+                    className="h-10 w-full rounded-md bg-[var(--app-surface-2)] px-3 text-sm text-[var(--app-text)] placeholder:text-[var(--app-muted)] outline-none ring-1 ring-[var(--app-border)] focus:ring-2 focus:ring-[var(--app-focus)]"
+                  />
+                </label>
+
+                <label className="block" htmlFor="ai-api-key">
+                  <span className="mb-2 block text-sm font-semibold text-[var(--app-muted)]">
+                    API key
+                  </span>
+                  <span className="relative block">
+                    <input
+                      id="ai-api-key"
+                      aria-label="AI API key"
+                      type={showApiKey ? "text" : "password"}
+                      value={settings.ai.apiKey}
+                      onChange={(event) =>
+                        updateAISetting("apiKey", event.target.value)
+                      }
+                      placeholder="sk-…"
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="h-10 w-full rounded-md bg-[var(--app-surface-2)] px-3 pr-11 text-sm text-[var(--app-text)] placeholder:text-[var(--app-muted)] outline-none ring-1 ring-[var(--app-border)] focus:ring-2 focus:ring-[var(--app-focus)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey((visible) => !visible)}
+                      aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                      className="absolute right-0 top-0 flex h-10 w-10 cursor-pointer items-center justify-center text-[var(--app-muted)] transition-colors hover:text-[var(--app-text)]"
+                    >
+                      {showApiKey ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </span>
+                </label>
+
+                <label className="block" htmlFor="ai-model">
+                  <span className="mb-2 block text-sm font-semibold text-[var(--app-muted)]">
+                    Model
+                  </span>
+                  <input
+                    id="ai-model"
+                    aria-label="AI model"
+                    type="text"
+                    value={settings.ai.model}
+                    onChange={(event) =>
+                      updateAISetting("model", event.target.value)
+                    }
+                    placeholder="google/gemini-2.5-flash-lite"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="h-10 w-full rounded-md bg-[var(--app-surface-2)] px-3 text-sm text-[var(--app-text)] placeholder:text-[var(--app-muted)] outline-none ring-1 ring-[var(--app-border)] focus:ring-2 focus:ring-[var(--app-focus)]"
+                  />
+                </label>
+              </div>
+            </div>
+          </section>
+
           <section>
             <h2 className="text-xl font-semibold text-[var(--app-subtle)]">
               Appearance

@@ -17,6 +17,7 @@ import {
   createDefaultAppState,
   loadAppState,
   saveAppState,
+  type AISettings,
   type AppState,
   type AppSettings,
   type BlocksState,
@@ -73,6 +74,7 @@ function BlocksPage({
   notificationVolume,
   completionSounds,
   customSounds,
+  aiSettings,
 }: {
   blocksState: BlocksState;
   blockTimerState: BlockTimerState;
@@ -85,6 +87,7 @@ function BlocksPage({
   notificationVolume: number;
   completionSounds: CompletionSoundSettings;
   customSounds: CustomSound[];
+  aiSettings: AISettings;
 }) {
   const totalAllocationPercent = blocksState.blocks.reduce(
     (sum, block) => sum + block.percent,
@@ -132,6 +135,7 @@ function BlocksPage({
         notificationVolume={notificationVolume}
         completionSounds={completionSounds}
         customSounds={customSounds}
+        aiSettings={aiSettings}
       />
     </section>
   );
@@ -197,7 +201,18 @@ function App() {
   const resetAppState = useCallback(() => {
     setCurrentPage("blocks");
     setResolutionNow(new Date());
-    setAppState(createDefaultAppState());
+    setAppState((previous) => {
+      const defaults = createDefaultAppState();
+
+      return {
+        ...defaults,
+        blocks: {
+          ...defaults.blocks,
+          presets: previous.blocks.presets,
+          nextPresetId: previous.blocks.nextPresetId,
+        },
+      };
+    });
   }, []);
 
   useEffect(() => {
@@ -282,6 +297,7 @@ function App() {
             notificationVolume={appState.settings.sound.notificationVolume}
             completionSounds={appState.settings.sound.completionSounds}
             customSounds={appState.settings.sound.customSounds}
+            aiSettings={appState.settings.ai}
           />
         )}
         {currentPage === "schedule" && (

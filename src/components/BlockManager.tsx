@@ -10,11 +10,13 @@ import confetti from "canvas-confetti";
 import { ChevronDown, RefreshCw, Save, Trash2 } from "lucide-react";
 import {
   createDefaultBlocksState,
+  type AISettings,
   type BlocksState,
   type CompletionSoundSettings,
   type CustomSound,
   type ResolvedTheme,
 } from "../lib/appState";
+import { autocompleteBlock } from "../lib/blockAutocomplete";
 import { completionSoundSource } from "../lib/completionSounds";
 import { sendBlockCompletionNotification } from "../lib/notifications";
 import { playSound } from "../lib/soundPlayer";
@@ -31,7 +33,14 @@ interface BlockManagerProps {
   notificationVolume: number;
   completionSounds: CompletionSoundSettings;
   customSounds: CustomSound[];
+  aiSettings: AISettings;
 }
+
+type AutocompleteState =
+  | { status: "loading" }
+  | { status: "error"; message: string };
+
+const AUTOCOMPLETE_DELAY_MS = 750;
 
 function completionToneForBlock(block: BlockData): CompletionTone {
   if (block.good === true) return "good";
@@ -62,6 +71,7 @@ export function BlockManager({
   notificationVolume,
   completionSounds,
   customSounds,
+  aiSettings,
 }: BlockManagerProps) {
   const {
     blocks,
@@ -75,9 +85,15 @@ export function BlockManager({
   const completionTonesRef = useRef(completionTones);
   const blockElementsRef = useRef<Record<number, HTMLDivElement>>({});
   const presetMenuRef = useRef<HTMLDivElement>(null);
+  const autocompleteTimersRef = useRef<Record<number, number>>({});
+  const autocompleteControllersRef = useRef<Record<number, AbortController>>({});
+  const autocompleteGenerationsRef = useRef<Record<number, number>>({});
   const [presetName, setPresetName] = useState("");
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [presetsOpen, setPresetsOpen] = useState(false);
+  const [autocompleteStates, setAutocompleteStates] = useState<
+    Record<number, AutocompleteState>
+  >({});
   blocksRef.current = blocks;
   completionTonesRef.current = completionTones;
 
@@ -104,6 +120,53 @@ export function BlockManager({
     window.addEventListener("mousedown", closePresetMenu);
     return () => window.removeEventListener("mousedown", closePresetMenu);
   }, [presetsOpen]);
+
+  useEffect(() => {
+    cancelAllAutocompletions();
+  }, [
+    aiSettings.apiKey,
+    aiSettings.enabled,
+    aiSettings.model,
+    aiSettings.url,
+  ]);
+
+  useEffect(
+    () => () => {
+      for (const timer of Object.values(autocompleteTimersRef.current)) {
+        window.clearTimeout(timer);
+      }
+      for (const controller of Object.values(
+        autocompleteControllersRef.current,
+      )) {
+        controller.abort();
+      }
+      for (const id of Object.keys(autocompleteGenerationsRef.current).map(Number)) {
+        autocompleteGenerationsRef.current[id] += 1;
+      }
+    },
+    [],
+  );
+
+  function cancelAllAutocompletions() {
+    const ids = new Set([
+      ...Object.keys(autocompleteTimersRef.current).map(Number),
+      ...Object.keys(autocompleteControllersRef.current).map(Number),
+      ...Object.keys(autocompleteGenerationsRef.current).map(Number),
+    ]);
+    for (const timer of Object.values(autocompleteTimersRef.current)) {
+      window.clearTimeout(timer);
+    }
+    for (const controller of Object.values(autocompleteControllersRef.current)) {
+      controller.abort();
+    }
+    for (const id of ids) {
+      autocompleteGenerationsRef.current[id] =
+        (autocompleteGenerationsRef.current[id] ?? 0) + 1;
+    }
+    autocompleteTimersRef.current = {};
+    autocompleteControllersRef.current = {};
+    setAutocompleteStates({});
+  }
 
   function playCompletionSound(tone: CompletionTone) {
     const volume = Math.max(0, Math.min(1, notificationVolume / 100));
@@ -274,6 +337,86 @@ export function BlockManager({
     onBlocksStateChange((previous) =>
       updateBlocks(previous, (block) => (block.id === id ? { ...block, name } : block))
     );
+    scheduleBlockAutocomplete(id, name);
+  }
+
+  function scheduleBlockAutocomplete(id: number, name: string) {
+    const currentTimer = autocompleteTimersRef.current[id];
+    if (currentTimer !== undefined) window.clearTimeout(currentTimer);
+    autocompleteControllersRef.current[id]?.abort();
+    delete autocompleteControllersRef.current[id];
+
+    const generation = (autocompleteGenerationsRef.current[id] ?? 0) + 1;
+    autocompleteGenerationsRef.current[id] = generation;
+    const title = name.trim();
+    const configured =
+      aiSettings.enabled &&
+      Boolean(aiSettings.url.trim()) &&
+      Boolean(aiSettings.apiKey.trim()) &&
+      Boolean(aiSettings.model.trim());
+
+    if (!configured || !title) {
+      setAutocompleteStates((previous) => {
+        if (!(id in previous)) return previous;
+        const next = { ...previous };
+        delete next[id];
+        return next;
+      });
+      return;
+    }
+
+    setAutocompleteStates((previous) => ({
+      ...previous,
+      [id]: { status: "loading" },
+    }));
+    const settingsSnapshot = { ...aiSettings };
+    autocompleteTimersRef.current[id] = window.setTimeout(() => {
+      delete autocompleteTimersRef.current[id];
+      const controller = new AbortController();
+      autocompleteControllersRef.current[id] = controller;
+
+      void autocompleteBlock(title, settingsSnapshot, controller.signal)
+        .then((metadata) => {
+          if (autocompleteGenerationsRef.current[id] !== generation) return;
+
+          onBlocksStateChange((previous) =>
+            updateBlocks(previous, (block) => {
+              if (block.id !== id || block.name.trim() !== title) return block;
+              return {
+                ...block,
+                emoji: metadata.emoji,
+                color: metadata.color,
+                good:
+                  metadata.status === "neutral"
+                    ? null
+                    : metadata.status === "good",
+              };
+            }),
+          );
+          setAutocompleteStates((previous) => {
+            const next = { ...previous };
+            delete next[id];
+            return next;
+          });
+        })
+        .catch((error: unknown) => {
+          if (
+            controller.signal.aborted ||
+            autocompleteGenerationsRef.current[id] !== generation
+          ) {
+            return;
+          }
+          setAutocompleteStates((previous) => ({
+            ...previous,
+            [id]: { status: "error", message: errorMessage(error) },
+          }));
+        })
+        .finally(() => {
+          if (autocompleteControllersRef.current[id] === controller) {
+            delete autocompleteControllersRef.current[id];
+          }
+        });
+    }, AUTOCOMPLETE_DELAY_MS);
   }
 
   function updateBlockPercent(id: number, percent: number) {
@@ -326,6 +469,19 @@ export function BlockManager({
   }
 
   function deleteBlock(id: number) {
+    const autocompleteTimer = autocompleteTimersRef.current[id];
+    if (autocompleteTimer !== undefined) window.clearTimeout(autocompleteTimer);
+    autocompleteControllersRef.current[id]?.abort();
+    delete autocompleteTimersRef.current[id];
+    delete autocompleteControllersRef.current[id];
+    autocompleteGenerationsRef.current[id] =
+      (autocompleteGenerationsRef.current[id] ?? 0) + 1;
+    setAutocompleteStates((previous) => {
+      if (!(id in previous)) return previous;
+      const next = { ...previous };
+      delete next[id];
+      return next;
+    });
     delete blockElementsRef.current[id];
     onBlocksStateChange((previous) => {
       const blockSpent = { ...previous.blockSpent };
@@ -346,6 +502,7 @@ export function BlockManager({
   }
 
   function resetBlocks() {
+    cancelAllAutocompletions();
     onBlocksStateChange((previous) => ({
       ...createDefaultBlocksState(),
       presets: previous.presets,
@@ -407,6 +564,8 @@ export function BlockManager({
     setSelectedPresetId(presetId);
     const preset = presets.find((item) => String(item.id) === presetId);
     if (!preset) return;
+
+    cancelAllAutocompletions();
 
     const presetBlocks = cloneBlocks(preset.blocks);
     const maxBlockId = presetBlocks.reduce(
@@ -561,6 +720,7 @@ export function BlockManager({
               remainingMs={remainingMs}
               allocatedMs={allocatedMs}
               resolvedTheme={resolvedTheme}
+              autocompleteState={autocompleteStates[block.id]}
             />
           );
         })}
@@ -568,4 +728,10 @@ export function BlockManager({
       <Muxer blocks={blocks} onApplyPercents={applyBlockPercents} />
     </section>
   );
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+  return "Block autocomplete failed.";
 }

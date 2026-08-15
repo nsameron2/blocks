@@ -1,19 +1,18 @@
 import { useCallback, useState } from "react";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
-import { ThumbsDown, ThumbsUp, X } from "lucide-react";
+import { CircleAlert, LoaderCircle, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import type { ResolvedTheme } from "../lib/appState";
-import type { Block as BlockType, CompletionTone } from "../lib/types";
+import {
+  BLOCK_COLOR_VALUES,
+  type Block as BlockType,
+  type CompletionTone,
+} from "../lib/types";
 
-const COLOR_OPTIONS = [
-  { label: "Gray", value: "bg-gray-500" },
-  { label: "Red", value: "bg-red-500" },
-  { label: "Blue", value: "bg-blue-500" },
-  { label: "Green", value: "bg-green-500" },
-  { label: "Yellow", value: "bg-yellow-500" },
-  { label: "Purple", value: "bg-purple-500" },
-  { label: "Pink", value: "bg-pink-500" },
-];
+const COLOR_OPTIONS = BLOCK_COLOR_VALUES.map((value) => {
+  const name = value.split("-")[1];
+  return { label: `${name[0].toUpperCase()}${name.slice(1)}`, value };
+});
 
 /* Darker ^ colors for slider track fills */
 const DARKER_SHADES: Record<string, string> = {
@@ -54,6 +53,9 @@ interface BlockProps {
   remainingMs: number;
   allocatedMs: number;
   resolvedTheme: ResolvedTheme;
+  autocompleteState?:
+    | { status: "loading" }
+    | { status: "error"; message: string };
 }
 
 function fmt(ms: number) {
@@ -82,6 +84,7 @@ export function Block({
   remainingMs,
   allocatedMs,
   resolvedTheme,
+  autocompleteState,
 }: BlockProps) {
   const pct = allocatedMs > 0 ? Math.round((remainingMs / allocatedMs) * 100) : 0;
   const fillPct = Math.max(0, Math.min(100, pct));
@@ -137,6 +140,29 @@ export function Block({
                     : "text-md"
             }`}
           />
+
+          {autocompleteState?.status === "loading" && (
+            <span
+              className="mr-1 mt-1 flex h-5 w-5 shrink-0 items-center justify-center text-white/80"
+              role="status"
+              title="Completing block with AI"
+            >
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+              <span className="sr-only">Completing block with AI</span>
+            </span>
+          )}
+          {autocompleteState?.status === "error" && (
+            <span
+              className="mr-1 mt-1 flex h-5 w-5 shrink-0 items-center justify-center text-red-100"
+              role="status"
+              title={autocompleteState.message}
+            >
+              <CircleAlert className="h-4 w-4" />
+              <span className="sr-only">
+                Block autocomplete failed: {autocompleteState.message}
+              </span>
+            </span>
+          )}
 
           <div className="relative shrink-0 ml-2 mt-0.5">
             <span
