@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/assets/images/logo3.png" alt="Blocks logo" width="120" />
+  <img src="src/assets/images/logo3.png" alt="Blocks logo" width="512" />
 </p>
 
 <h1 align="center">Blocks</h1>
