@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { loadTypeScript } = require("./helpers.cjs");
-const { advanceSession, updateSessionBlocks } = loadTypeScript("src/lib/session.ts");
+const { advanceSession, replaceSessionBlocks, updateSessionBlocks } = loadTypeScript("src/lib/session.ts");
 const { createDefaultAppState } = loadTypeScript("src/lib/appState.ts");
 
 const start = Date.parse("2026-11-09T09:00:00Z");
@@ -60,5 +60,21 @@ test("pre-start editing never charges a block", () => {
   const state = session();
   state.blockTimer.started = false;
   assert.equal(advanceSession(state, start + duration), state);
+});
+
+test("replacing a live layout returns to setup and retains its deadline", () => {
+  const running = advanceSession(session(), start + duration / 2);
+  const replacement = { ...running.blocks, blocks: [{ ...running.blocks.blocks[0], percent: 100 }] };
+  const state = replaceSessionBlocks(running, replacement);
+  assert.equal(state.blockTimer.started, false);
+  assert.equal(state.blockTimer.targetAt, running.blockTimer.targetAt);
+  assert.equal(state.blockTimer.totalDurationMs, 0);
+  assert.deepEqual(state.blocks.blockSpent, {});
+  assert.equal(state.blocks.activeBlockId, null);
+  assert.equal(advanceSession(state, start + duration), state);
+
+  // Starting again at the retained deadline only allocates the remaining half hour.
+  const remaining = Date.parse(state.blockTimer.targetAt) - (start + duration / 2);
+  assert.equal(remaining, 30 * 60 * 1000);
 });
 

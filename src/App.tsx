@@ -33,7 +33,7 @@ import {
   type LogOffSchedule,
 } from "./lib/logOffSchedule";
 import { Settings } from "./Settings";
-import { advanceSession, updateSessionBlocks } from "./lib/session";
+import { advanceSession, replaceSessionBlocks, updateSessionBlocks } from "./lib/session";
 
 const APP_STATE_SAVE_DEBOUNCE_MS = 500;
 const SYSTEM_DARK_MODE_QUERY = "(prefers-color-scheme: dark)";
@@ -67,6 +67,7 @@ function BlocksPage({
   blocksState,
   blockTimerState,
   onBlocksStateChange,
+  onReplaceBlocks,
   onBlockTimerStateChange,
   onAppReset,
   targetLogOffAt,
@@ -80,6 +81,7 @@ function BlocksPage({
   blocksState: BlocksState;
   blockTimerState: BlockTimerState;
   onBlocksStateChange: Dispatch<SetStateAction<BlocksState>>;
+  onReplaceBlocks: Dispatch<SetStateAction<BlocksState>>;
   onBlockTimerStateChange: Dispatch<SetStateAction<BlockTimerState>>;
   onAppReset: () => void;
   targetLogOffAt: Date | null;
@@ -130,6 +132,7 @@ function BlocksPage({
       <BlockManager
         blocksState={blocksState}
         onBlocksStateChange={onBlocksStateChange}
+        onReplaceBlocks={onReplaceBlocks}
         totalDurationMs={blockTimerState.totalDurationMs}
         scheduleStarted={blockTimerState.started}
         resolvedTheme={resolvedTheme}
@@ -176,6 +179,13 @@ function App() {
         ...previous,
         blockTimer: applyStateUpdate(previous.blockTimer, update),
       }));
+    },
+    [],
+  );
+
+  const replaceBlocksState = useCallback<Dispatch<SetStateAction<BlocksState>>>(
+    (update) => {
+      setAppState((previous) => replaceSessionBlocks(previous, update));
     },
     [],
   );
@@ -298,6 +308,7 @@ function App() {
             blocksState={appState.blocks}
             blockTimerState={appState.blockTimer}
             onBlocksStateChange={setBlocksState}
+            onReplaceBlocks={replaceBlocksState}
             onBlockTimerStateChange={setBlockTimerState}
             onAppReset={resetAppState}
             targetLogOffAt={targetLogOffAt}

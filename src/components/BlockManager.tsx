@@ -27,6 +27,7 @@ import { Muxer } from "./Muxer";
 interface BlockManagerProps {
   blocksState: BlocksState;
   onBlocksStateChange: Dispatch<SetStateAction<BlocksState>>;
+  onReplaceBlocks: Dispatch<SetStateAction<BlocksState>>;
   totalDurationMs: number;
   scheduleStarted: boolean;
   resolvedTheme: ResolvedTheme;
@@ -65,6 +66,7 @@ function cloneBlocks(blocks: BlockData[]): BlockData[] {
 export function BlockManager({
   blocksState,
   onBlocksStateChange,
+  onReplaceBlocks,
   totalDurationMs,
   scheduleStarted,
   resolvedTheme,
@@ -481,7 +483,7 @@ export function BlockManager({
 
   function resetBlocks() {
     cancelAllAutocompletions();
-    onBlocksStateChange((previous) => ({
+    onReplaceBlocks((previous) => ({
       ...createDefaultBlocksState(),
       presets: previous.presets,
       nextPresetId: previous.nextPresetId,
@@ -551,7 +553,7 @@ export function BlockManager({
       0,
     );
 
-    onBlocksStateChange((previous) => ({
+    onReplaceBlocks((previous) => ({
       ...previous,
       blocks: presetBlocks,
       nextBlockId: maxBlockId + 1,

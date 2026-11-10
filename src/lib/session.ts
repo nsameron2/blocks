@@ -47,3 +47,22 @@ export function updateSessionBlocks(
     blocks: typeof update === "function" ? update(current.blocks) : update,
   };
 }
+
+export function replaceSessionBlocks(
+  state: AppState,
+  update: BlocksState | ((previous: BlocksState) => BlocksState),
+): AppState {
+  // A new layout starts a new session. Keep the chosen deadline so Start can
+  // budget only the time still available, after checking the new allocation.
+  const blocks = typeof update === "function" ? update(state.blocks) : update;
+  return {
+    ...state,
+    blocks: { ...blocks, activeBlockId: null, blockSpent: {}, completionTones: {} },
+    blockTimer: {
+      ...state.blockTimer,
+      started: false,
+      totalDurationMs: 0,
+      remainingMs: 0,
+    },
+  };
+}
