@@ -181,9 +181,9 @@ export function createDefaultSettings(): AppSettings {
   return {
     ai: {
       enabled: false,
-      url: "https://api.openai.com/v1",
+      url: "https://openrouter.ai/api/v1",
       apiKey: "",
-      model: "gpt-4o-mini",
+      model: "google/gemini-2.5-flash-lite",
     },
     appearance: {
       theme: "system",

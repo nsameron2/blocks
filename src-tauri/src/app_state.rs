@@ -319,11 +319,11 @@ fn default_notification_volume() -> u8 {
 }
 
 fn default_ai_url() -> String {
-    "https://api.openai.com/v1".to_string()
+    "https://openrouter.ai/api/v1".to_string()
 }
 
 fn default_ai_model() -> String {
-    "gpt-4o-mini".to_string()
+    "google/gemini-2.5-flash-lite".to_string()
 }
 
 fn default_good_completion_sound() -> String {
