@@ -23,6 +23,7 @@ import { playSound } from "../lib/soundPlayer";
 import type { Block as BlockData, CompletionTone } from "../lib/types";
 import { Block } from "./Block";
 import { Muxer } from "./Muxer";
+import { removeBlock } from "../lib/session";
 
 interface BlockManagerProps {
   blocksState: BlocksState;
@@ -463,22 +464,7 @@ export function BlockManager({
       return next;
     });
     delete blockElementsRef.current[id];
-    onBlocksStateChange((previous) => {
-      const blockSpent = { ...previous.blockSpent };
-      const completionTones = { ...previous.completionTones };
-
-      delete blockSpent[id];
-      delete completionTones[id];
-
-      return {
-        ...previous,
-        blocks: previous.blocks.filter((block) => block.id !== id),
-        activeBlockId:
-          previous.activeBlockId === id ? null : previous.activeBlockId,
-        blockSpent,
-        completionTones,
-      };
-    });
+    onBlocksStateChange((previous) => removeBlock(previous, id));
   }
 
   function resetBlocks() {

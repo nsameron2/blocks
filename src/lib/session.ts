@@ -12,7 +12,7 @@ export function advanceSession(state: AppState, now = Date.now()): AppState {
   const elapsedMs = blockTimer.totalDurationMs - remainingMs;
   const spentMs = Object.values(blocks.blockSpent).reduce(
     (sum, ms) => sum + ms,
-    0,
+    blocks.archivedSpentMs,
   );
   const unaccountedMs = elapsedMs - spentMs;
   const chargedBlockId = blocks.activeBlockId ?? blocks.blocks[0]?.id ?? null;
@@ -57,12 +57,37 @@ export function replaceSessionBlocks(
   const blocks = typeof update === "function" ? update(state.blocks) : update;
   return {
     ...state,
-    blocks: { ...blocks, activeBlockId: null, blockSpent: {}, completionTones: {} },
+    blocks: {
+      ...blocks,
+      activeBlockId: null,
+      blockSpent: {},
+      archivedSpentMs: 0,
+      completionTones: {},
+    },
     blockTimer: {
       ...state.blockTimer,
       started: false,
       totalDurationMs: 0,
       remainingMs: 0,
     },
+  };
+}
+
+export function removeBlock(state: BlocksState, id: number): BlocksState {
+  const blockSpent = { ...state.blockSpent };
+  const completionTones = { ...state.completionTones };
+  // Keep removed usage in the session ledger so refresh/reload cannot charge it
+  // again to a surviving block. A new session clears this archived total.
+  const archivedSpentMs = state.archivedSpentMs + (blockSpent[id] ?? 0);
+  delete blockSpent[id];
+  delete completionTones[id];
+
+  return {
+    ...state,
+    blocks: state.blocks.filter((block) => block.id !== id),
+    activeBlockId: state.activeBlockId === id ? null : state.activeBlockId,
+    blockSpent,
+    archivedSpentMs,
+    completionTones,
   };
 }

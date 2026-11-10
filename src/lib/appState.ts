@@ -78,6 +78,7 @@ export interface BlocksState {
   nextBlockId: number;
   activeBlockId: number | null;
   blockSpent: Record<number, number>;
+  archivedSpentMs: number;
   completionTones: Record<number, CompletionTone>;
   presets: BlockPreset[];
   nextPresetId: number;
@@ -129,6 +130,7 @@ export function createDefaultBlocksState(): BlocksState {
     nextBlockId: DEFAULT_NEXT_BLOCK_ID,
     activeBlockId: null,
     blockSpent: {},
+    archivedSpentMs: 0,
     completionTones: {},
     presets: [],
     nextPresetId: DEFAULT_NEXT_PRESET_ID,
@@ -235,6 +237,7 @@ function normalizeBlocksState(value: unknown): BlocksState {
     nextBlockId,
     activeBlockId,
     blockSpent: normalizeNumberMap(record.blockSpent, blockIds),
+    archivedSpentMs: nonNegativeIntegerOr(record.archivedSpentMs, 0),
     completionTones: normalizeCompletionToneMap(record.completionTones, blockIds),
     presets,
     nextPresetId,

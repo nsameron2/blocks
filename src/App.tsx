@@ -101,6 +101,7 @@ function BlocksPage({
     onBlocksStateChange((previous) => ({
       ...previous,
       blockSpent: {},
+      archivedSpentMs: 0,
       completionTones: {},
     }));
   }
@@ -110,6 +111,7 @@ function BlocksPage({
       ...previous,
       activeBlockId: null,
       blockSpent: {},
+      archivedSpentMs: 0,
       completionTones: {},
     }));
   }

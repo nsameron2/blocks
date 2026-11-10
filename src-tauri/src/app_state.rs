@@ -48,6 +48,8 @@ pub struct BlocksState {
     #[serde(default)]
     pub block_spent: BTreeMap<u32, u64>,
     #[serde(default)]
+    pub archived_spent_ms: u64,
+    #[serde(default)]
     pub completion_tones: BTreeMap<u32, CompletionTone>,
     #[serde(default)]
     pub presets: Vec<BlockPreset>,
@@ -62,6 +64,7 @@ impl Default for BlocksState {
             next_block_id: default_next_block_id(),
             active_block_id: None,
             block_spent: BTreeMap::new(),
+            archived_spent_ms: 0,
             completion_tones: BTreeMap::new(),
             presets: Vec::new(),
             next_preset_id: default_next_preset_id(),
@@ -351,4 +354,29 @@ fn default_blocks() -> Vec<Block> {
         emoji: "⏲️".to_string(),
         good: Some(false),
     }]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn archived_block_time_survives_serialization() {
+        let mut state = AppState::default();
+        state.blocks.archived_spent_ms = 600_123;
+        let json = serde_json::to_string(&state).unwrap();
+        let restored: AppState = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.blocks.archived_spent_ms, 600_123);
+    }
+
+    #[test]
+    fn older_states_default_to_no_archived_block_time() {
+        let mut json = serde_json::to_value(AppState::default()).unwrap();
+        json["blocks"]
+            .as_object_mut()
+            .unwrap()
+            .remove("archivedSpentMs");
+        let restored: AppState = serde_json::from_value(json).unwrap();
+        assert_eq!(restored.blocks.archived_spent_ms, 0);
+    }
 }

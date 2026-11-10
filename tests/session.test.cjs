@@ -1,8 +1,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { loadTypeScript } = require("./helpers.cjs");
-const { advanceSession, replaceSessionBlocks, updateSessionBlocks } = loadTypeScript("src/lib/session.ts");
-const { createDefaultAppState } = loadTypeScript("src/lib/appState.ts");
+const { advanceSession, removeBlock, replaceSessionBlocks, updateSessionBlocks } = loadTypeScript("src/lib/session.ts");
+const { createDefaultAppState, normalizeAppState } = loadTypeScript("src/lib/appState.ts");
 
 const start = Date.parse("2026-11-09T09:00:00Z");
 const duration = 60 * 60 * 1000;
@@ -76,5 +76,38 @@ test("replacing a live layout returns to setup and retains its deadline", () => 
   // Starting again at the retained deadline only allocates the remaining half hour.
   const remaining = Date.parse(state.blockTimer.targetAt) - (start + duration / 2);
   assert.equal(remaining, 30 * 60 * 1000);
+});
+
+test("deleting a used block never transfers its history to another block", (t) => {
+  t.mock.method(Date, "now", () => start + 960000);
+  let state = updateSessionBlocks(session(), (blocks) => ({ ...blocks, activeBlockId: 2 }), start + 600000);
+  state = updateSessionBlocks(state, (blocks) => removeBlock(blocks, 1), start + 900000);
+  assert.equal(state.blocks.archivedSpentMs, 600000);
+  assert.deepEqual(state.blocks.blockSpent, { 2: 300000 });
+  state = advanceSession(state, start + 901000);
+  assert.deepEqual(state.blocks.blockSpent, { 2: 301000 });
+
+  const restored = normalizeAppState(JSON.parse(JSON.stringify(state)));
+  state = advanceSession(restored, start + 960000);
+  assert.equal(state.blocks.archivedSpentMs, 600000);
+  assert.deepEqual(state.blocks.blockSpent, { 2: 360000 });
+  assert.equal(state.blockTimer.remainingMs, duration - 960000);
+});
+
+test("deleting the active block settles its final partial second before archiving", () => {
+  let state = updateSessionBlocks(session(), (blocks) => removeBlock(blocks, 1), start + 1250);
+  assert.equal(state.blocks.archivedSpentMs, 1250);
+  state = advanceSession(state, start + 1500);
+  assert.deepEqual(state.blocks.blockSpent, { 2: 250 });
+  assert.equal(removeBlock(state.blocks, 1).archivedSpentMs, 1250);
+  assert.equal(replaceSessionBlocks(state, state.blocks).blocks.archivedSpentMs, 0);
+});
+
+test("legacy saves load without archived time and invalid archived values are sanitized", () => {
+  const state = session();
+  delete state.blocks.archivedSpentMs;
+  assert.equal(normalizeAppState(state).blocks.archivedSpentMs, 0);
+  state.blocks.archivedSpentMs = -1;
+  assert.equal(normalizeAppState(state).blocks.archivedSpentMs, 0);
 });
 
