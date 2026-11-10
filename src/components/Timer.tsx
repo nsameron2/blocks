@@ -336,7 +336,7 @@ export function Timer({
       const currentTarget =
         prev.at > current ? prev.at : clockState(prev.at, current, timeFormat).at;
 
-      return clockState(addMinutes(currentTarget, minutes), current, timeFormat);
+      return clockStateFromTarget(addMinutes(currentTarget, minutes), current, timeFormat);
     });
   }
 
@@ -382,7 +382,7 @@ export function Timer({
         prev.at > current ? prev.at : clockState(prev.at, current, timeFormat).at;
       const shifted = addMinutes(currentTarget, minutes);
       return shifted > current
-        ? clockState(shifted, current, timeFormat)
+        ? clockStateFromTarget(shifted, current, timeFormat)
         : prev;
     });
   }
