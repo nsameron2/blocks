@@ -283,7 +283,7 @@ function App() {
       />
 
       <div className="min-h-screen pl-64 sm:pl-96">
-        {currentPage === "blocks" && (
+        <div hidden={currentPage !== "blocks"}>
           <BlocksPage
             key={appStateLoaded ? "hydrated" : "default"}
             blocksState={appState.blocks}
@@ -299,7 +299,7 @@ function App() {
             customSounds={appState.settings.sound.customSounds}
             aiSettings={appState.settings.ai}
           />
-        )}
+        </div>
         {currentPage === "schedule" && (
           <Schedule
             logOffSchedule={appState.schedule}
