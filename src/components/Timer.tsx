@@ -499,32 +499,6 @@ export function Timer({
   }, [started]);
 
   useEffect(() => {
-    if (!started) return;
-
-    function updateRemaining() {
-      onStateChange((previous) => {
-        const targetAt = dateFromIso(previous.targetAt);
-        const remainingMs = targetAt
-          ? differenceInMilliseconds(targetAt, new Date())
-          : previous.remainingMs - 1000;
-
-        if (previous.remainingMs === remainingMs) {
-          return previous;
-        }
-
-        return { ...previous, remainingMs };
-      });
-    }
-
-    updateRemaining();
-
-    const timer = setInterval(() => {
-      updateRemaining();
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [onStateChange, started]);
-
-  useEffect(() => {
     if (!started) {
       overtimeNotifiedRef.current = false;
       return;

@@ -81,7 +81,6 @@ export function BlockManager({
     presets,
     nextPresetId,
   } = blocksState;
-  const blocksRef = useRef(blocks);
   const completionTonesRef = useRef(completionTones);
   const blockElementsRef = useRef<Record<number, HTMLDivElement>>({});
   const presetMenuRef = useRef<HTMLDivElement>(null);
@@ -94,7 +93,6 @@ export function BlockManager({
   const [autocompleteStates, setAutocompleteStates] = useState<
     Record<number, AutocompleteState>
   >({});
-  blocksRef.current = blocks;
   completionTonesRef.current = completionTones;
 
   const registerBlockElement = useCallback(
@@ -218,26 +216,6 @@ export function BlockManager({
       });
     }
   }, [activeBlockId, blocks.length, onBlocksStateChange, scheduleStarted]);
-
-  useEffect(() => {
-    if (!scheduleStarted || activeBlockId === null) return;
-    const timer = setInterval(() => {
-      onBlocksStateChange((previous) => {
-        const block = blocksRef.current.find((b) => b.id === activeBlockId);
-        if (!block) return previous;
-        const currentSpent = previous.blockSpent[activeBlockId] ?? 0;
-
-        return {
-          ...previous,
-          blockSpent: {
-            ...previous.blockSpent,
-            [activeBlockId]: currentSpent + 1000,
-          },
-        };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [activeBlockId, onBlocksStateChange, scheduleStarted, totalDurationMs]);
 
   useEffect(() => {
     if (!scheduleStarted) return;

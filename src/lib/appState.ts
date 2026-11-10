@@ -5,6 +5,7 @@ import {
   type Weekday,
 } from "./logOffSchedule";
 import type { Block, CompletionTone } from "./types";
+import { advanceSession } from "./session";
 
 export const APP_STATE_VERSION = 1;
 const DEFAULT_BLOCK_ID = 1;
@@ -101,33 +102,7 @@ export async function loadAppState(): Promise<AppState> {
   }
 
   const state = await invoke<unknown>("load_app_state");
-  return reconcileUnaccountedTime(normalizeAppState(state));
-}
-
-function reconcileUnaccountedTime(state: AppState): AppState {
-  const { blockTimer, blocks } = state;
-  if (!blockTimer.started) return state;
-
-  const elapsedMs = blockTimer.totalDurationMs - blockTimer.remainingMs;
-  const spentMs = Object.values(blocks.blockSpent).reduce(
-    (sum, ms) => sum + ms,
-    0,
-  );
-  const unaccountedMs = elapsedMs - spentMs;
-  const chargedBlockId = blocks.activeBlockId ?? blocks.blocks[0]?.id ?? null;
-  if (unaccountedMs <= 0 || chargedBlockId === null) return state;
-
-  return {
-    ...state,
-    blocks: {
-      ...blocks,
-      blockSpent: {
-        ...blocks.blockSpent,
-        [chargedBlockId]:
-          (blocks.blockSpent[chargedBlockId] ?? 0) + unaccountedMs,
-      },
-    },
-  };
+  return advanceSession(normalizeAppState(state));
 }
 
 export async function saveAppState(state: AppState): Promise<void> {

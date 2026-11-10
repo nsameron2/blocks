@@ -33,6 +33,7 @@ import {
   type LogOffSchedule,
 } from "./lib/logOffSchedule";
 import { Settings } from "./Settings";
+import { advanceSession, updateSessionBlocks } from "./lib/session";
 
 const APP_STATE_SAVE_DEBOUNCE_MS = 500;
 const SYSTEM_DARK_MODE_QUERY = "(prefers-color-scheme: dark)";
@@ -161,10 +162,8 @@ function App() {
 
   const setBlocksState = useCallback<Dispatch<SetStateAction<BlocksState>>>(
     (update) => {
-      setAppState((previous) => ({
-        ...previous,
-        blocks: applyStateUpdate(previous.blocks, update),
-      }));
+      const now = Date.now();
+      setAppState((previous) => updateSessionBlocks(previous, update, now));
     },
     [],
   );
@@ -251,6 +250,16 @@ function App() {
 
     return () => window.clearTimeout(saveTimer);
   }, [appState, appStateLoaded]);
+
+  useEffect(() => {
+    if (!appStateLoaded || !appState.blockTimer.started) return;
+
+    const timer = setInterval(() => {
+      const now = Date.now();
+      setAppState((previous) => advanceSession(previous, now));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [appStateLoaded, appState.blockTimer.started]);
 
   useEffect(() => {
     const timer = setInterval(() => setResolutionNow(new Date()), 30 * 1000);
